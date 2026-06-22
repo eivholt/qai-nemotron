@@ -1,0 +1,16 @@
+.venv-qai/
+20260621T072100Z__hf_nemotron_new_off2048__thinking_off
+20260621T072953Z__hf_nemotron_new_on2048__thinking_on
+20260621T073544Z__hf_stock_new_2048__stock
+nemotron_nano_w4a16_cl4096_py310_aimet226
+host_bench_results
+agent_arena_results
+stock_llama_iq9075_genie
+nemotron_iq9075_genie
+agent_arena/__pycache__
+evk_bench/__pycache__
+host_bench/__pycache__
+*Identifier
+quantize_cl4096_aimet226.log
+stock_llama_iq9075_export.log
+agent_arena/.env
