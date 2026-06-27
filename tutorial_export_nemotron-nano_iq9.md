@@ -8,11 +8,13 @@
 
 ---
 
+Edge-deployed language models are at the very cusp of being useful alternatives to traditional control-flow programming. While exciting, local model selection can be tricky, in stark contrast to large frontier models. The larger models are more forgiving all-rounders, edge-deployable smaller models needs to be selected with care.
+
 ## What this tutorial accomplishes
 
 In this tutorial I share my journey taking NVIDIA's BF16 `Llama-3.1-Nemotron-Nano-8B-v1` checkpoint, quantizing it to Qualcomm's W4A16 deployment format, compiling it for QCS9075 in Qualcomm AI Hub Workbench, installing the matching QAIRT runtime on a physical IQ-9075 EVK, and running the model through Genie on the Hexagon HTP/NPU.
 
-My friend Christian Johansen coined the phrase "Like applause at a jazz concert". In the same way non-jazz afinados may be puzzled by spontanious bursts of cheer in the middle of 23 minute jazz jams, the accomplishments of this technical exercise may not be obvious and could also easily be misinterpreted.
+My friend Christian Johansen coined the phrase "Like applause at a jazz concert". In the same way non-jazz afinados may be puzzled by spontanious bursts of cheer in the middle of 23 minute jazz jams, the accomplishments of this technical exercise may not be obvious and can also easily be misinterpreted.
 
 The result is not a CPU-only GGUF experiment. The final bundle uses the `QnnHtp` backend and the physical EVK's Hexagon v73 DSP. In the validated run, the model generated coherent output at 10.03 tokens/s, essentially matching Qualcomm's published performance for stock Llama 3.1 8B on the same platform.
 
@@ -25,7 +27,9 @@ That architectural compatibility is why Qualcomm's existing Llama 3.1 8B impleme
 > Running NVIDIA's Nemotron-specific post-trained weights on Qualcomm's optimized Llama 3.1 execution path, not adding a new Mamba/MoE operator stack to QAIRT.
 
 ### Where Nemotron Nano finds it's role on a Qualcomm Dragonwing IQ-9075 EVK
-As detailed in the follow-up tutorial, quantizing and exporting Nemotron Nano for the IQ9075 appears worthwhile if the target is simple, BFCL-style agentic tool use: choosing the right tool, filling arguments, abstaining when no tool is needed, and issuing simple parallel calls. After fixing the Nemotron-native parser, it outperformed the already-quantized QC AI Hub Llama 3.1 8B model on our small EVK BFCL-inspired suite. However, Ministral remains much stronger on complex multi-step agent workflows in our OR arena.
+As detailed in the follow-up tutorial, quantizing and exporting Nemotron Nano for the IQ9075 is a good fit if the target is simple, BFCL-style agentic tool use: choosing the right tool, filling arguments, abstaining when no tool is needed, and issuing simple parallel calls. After fixing the Nemotron-native parser, it outperformed the already-quantized QC AI Hub Llama 3.1 8B model on my small EVK BFCL-inspired suite. A model like Ministral 3B Q4 is weaker on that type of simple tasks, while it remains much stronger on complex multi-step agent workflows.
+
+> For model selection for any given application, the devil is in the details. Aggregated benchmark results in model cards might indicate a model's strengths, but purpose-built benchmarks for each application is a must!
 
 ---
 
@@ -486,7 +490,7 @@ The output must remain coherent after the switch.
 
 ### Why this validation matters
 
-With the earlier AIMET 2.33 / Python 3.12 stack, quantization printed `completed successfully`, and the large calibration graph could output the correct first token. Yet the 128-token and 1-token deployment graphs generated nonsense. The fix was not more calibration samples; it was the version-aligned environment.
+With the earlier AIMET 2.33 / Python 3.12 stack, quantization printed `completed successfully`, and the large calibration graph could output the correct first token. Yet the 128-token and 1-token deployment graphs generated Gerald Cooper-ish nonsense. The fix was not more calibration samples; it was the version-aligned environment.
 
 ## Run the full 4K-context quantization
 
@@ -901,7 +905,7 @@ The following short demo runs on the EVK and demonstrates Nemotron Nano producin
 ![First EVK demo](resources/EVK-first-demo.gif)
 ---
 
-# What this deployment proves - and what it does not
+# What this deployment proves
 
 ## Proven
 
@@ -1077,7 +1081,7 @@ On the original 20-case practical suite, stock Llama was stronger.
 | Nemotron W4A16 | thinking on, 2048 tokens | 7/20 | 0.557 | 9.77 | 219.0 ms |
 | Stock Llama 3.1 W4A16 | greedy, 512 tokens | 10/20 | 0.710 | 10.19 | 220.2 ms |
 
-Thinking-on helped Nemotron a little on the old suite, but not enough to catch stock Llama. It also increased the risk that the answer would be consumed by reasoning text or would not reach a clean final artifact.
+Thinking-on helped Nemotron a little on the old suite, but not enough to catch stock Llama. It also increased the risk that the answer would be consumed by reasoning text or would not reach a clean final artifact, sort of like asking my 8 year old son which super hero is the best.
 
 ## Prompt Strictness and Token Budget
 
@@ -1207,6 +1211,10 @@ For an EVK tutorial, I would present Nemotron Nano as useful for:
 
 I would not present it as the best choice for one-shot Linux command generation. For that, stock Llama 3.1 8B W4A16 was more reliable in my tests.
 
+# Agentic Edge AI
+
+In the follow-up tutorial I cover how I used this Nemotron Nano model as the LLM for on-device agentic AI. I compare it to other models and point out where it excels.
+
 ---
 
 # References
@@ -1216,6 +1224,5 @@ I would not present it as the best choice for one-shot Linux command generation.
 3. Qualcomm AI Hub Models v0.56.0, [**Llama 3.1 8B Instruct implementation**](https://github.com/qualcomm/ai-hub-models/tree/v0.56.0/src/qai_hub_models/models/llama_v3_1_8b_instruct) - quantization/export workflow and version guidance.
 4. Qualcomm, [**Dragonwing IQ-9075 EVK**](https://www.qualcomm.com/developer/hardware/qualcomm-iq-9075-evaluation-kit-evk) - board capabilities and memory configuration.
 5. Qualcomm, [**FastRPC**](https://github.com/qualcomm/fastrpc) - DSP transport, group membership, and device permissions.
-6. Qualcomm AI Hub Workbench export log and EVK FastRPC bring-up transcript from the validated run.
 
 ---
