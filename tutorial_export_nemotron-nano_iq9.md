@@ -35,7 +35,7 @@ As detailed in the follow-up tutorial, quantizing and exporting Nemotron Nano fo
 
 ## The end-to-end pipeline
 
-![Qualcomm AI Hub flow](resources\Qualcomm-AI-Hub-flow.png)
+![Qualcomm AI Hub flow](resources/Qualcomm-AI-Hub-flow.png)
 
 ```text
 NVIDIA BF16 Hugging Face checkpoint -> 
