@@ -919,4 +919,4 @@ The following short demo runs on the EVK and demonstrates Nemotron Nano producin
 
 # Agentic Edge AI
 
-In the follow-up tutorial I cover how I used this Nemotron Nano model as the LLM for on-device agentic AI. I compare it to other models and point out where it excels.
+In the follow-up tutorial I cover how I use models like these as the LLM for on-device agentic AI.
