@@ -14,7 +14,7 @@ Edge-deployed language models are at the very cusp of being useful alternatives 
 
 In this tutorial I share my journey taking NVIDIA's BF16 `Llama-3.1-Nemotron-Nano-8B-v1` checkpoint, quantizing it to Qualcomm's W4A16 deployment format, compiling it for QCS9075 in Qualcomm AI Hub Workbench, installing the matching QAIRT runtime on a physical IQ-9075 EVK, and running the model through Genie on the Hexagon HTP/NPU.
 
-My friend Christian Johansen coined the phrase "Like applause at a jazz concert". In the same way non-jazz afinados may be puzzled by spontanious bursts of cheer in the middle of 23 minute jazz jams, the accomplishments of this technical exercise may not be obvious and can also easily be misinterpreted.
+My friend coined the phrase "Like applause at a jazz concert". In the same way non-jazz afinados may be puzzled by spontanious bursts of cheer in the middle of 23 minute jazz jams, the accomplishments of this technical exercise may not be obvious and can also easily be misinterpreted.
 
 ![Qualcomm Dragonwing IQ-9075 EVK](resources/20260628_153448.jpg)
 
