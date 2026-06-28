@@ -16,6 +16,8 @@ In this tutorial I share my journey taking NVIDIA's BF16 `Llama-3.1-Nemotron-Nan
 
 My friend Christian Johansen coined the phrase "Like applause at a jazz concert". In the same way non-jazz afinados may be puzzled by spontanious bursts of cheer in the middle of 23 minute jazz jams, the accomplishments of this technical exercise may not be obvious and can also easily be misinterpreted.
 
+![Qualcomm Dragonwing IQ-9075 EVK](resources/20260628_153448.jpg)
+
 The result is not a CPU-only GGUF experiment. The final bundle uses the `QnnHtp` backend and the physical EVK's Hexagon v73 DSP. In the validated run, the model generated coherent output at 10.03 tokens/s, essentially matching Qualcomm's published performance for stock Llama 3.1 8B on the same platform.
 
 ### An important architectural clarification
