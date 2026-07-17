@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "generated_utc": "2026-07-17",
+  "benchmark_contract": {
+    "bfcl80_case_file": "agent_arena/benchmark_selections/bfcl_v4_holdout80_nonweb_20260627.json",
+    "bfcl90_case_file": "agent_arena/benchmark_selections/bfcl_v4_fresh90_nonweb_20260628.json",
+    "selection_overlap": 0,
+    "dedicated_web_search_categories_included": false,
+    "hospital_case_count": 14,
+    "hospital_is_iterative": true,
+    "hospital_is_strict": true,
+    "llm_judge_used": false
+  },
+  "toolace25": {
+    "status": "complete",
+    "model": "Team-ACE/ToolACE-2.5-Llama-3.1-8B",
+    "host_bf16": {
+      "compute": "RTX 5090",
+      "llama_json": {
+        "bfcl80": {"correct": 74, "total": 80},
+        "bfcl90": {"correct": 72, "total": 90},
+        "combined": {"correct": 146, "total": 170}
+      },
+      "pythonic": {
+        "bfcl80": {"correct": 69, "total": 80},
+        "bfcl90": {"correct": 71, "total": 90},
+        "combined": {"correct": 140, "total": 170},
+        "hospital": {"passed": 10, "total": 14, "strict_average": 0.789}
+      }
+    },
+    "iq9075_w4a16": {
+      "compute": "Hexagon HTP/NPU",
+      "runtime": "Genie/QNN",
+      "adapter": "model-card Python calls with strict toolace_pythonic parsing",
+      "bfcl80": {
+        "correct": 56,
+        "total": 80,
+        "summary_path": "agent_arena_results/bfcl_v4_100/toolace25_evk_pythonic_smoke6_20260717/summary_evk-toolace25-pythonic-smoke6.json",
+        "note": "directory retains its initial smoke6 name, but subset_manifest.json confirms the complete fixed 80-case selection"
+      },
+      "bfcl90": {
+        "correct": 52,
+        "total": 90,
+        "summary_path": "agent_arena_results/bfcl_v4_100/toolace25_evk_pythonic_fresh90_20260717/summary_evk-toolace25-pythonic-fresh90.json"
+      },
+      "combined": {"correct": 108, "total": 170},
+      "hospital": {"passed": 6, "total": 14, "strict_average": 0.429},
+      "representative_generated_tokens_per_s": 9.9,
+      "llama_json_probe": {
+        "bfcl80": {"correct": 49, "total": 80},
+        "interpretation": "native Pythonic format was retained for the final device comparison"
+      }
+    },
+    "export_resources": {
+      "quantization_wall_time_s": 12660,
+      "quantization_peak_rss_gb": 183.4,
+      "local_simulator_wall_time_s": 1665,
+      "local_simulator_peak_rss_gb_approx": 97,
+      "hub_compile_link_export_wall_time_s": 4800,
+      "final_context_count": 5,
+      "final_context_total_gb": 5.1,
+      "intermediate_model_data_gb": 32.1
+    }
+  },
+  "ministral3_8b_instruct_2512": {
+    "status": "host_complete_device_smoke_only",
+    "model": "mistralai/Ministral-3-8B-Instruct-2512-BF16",
+    "host_bf16": {
+      "compute": "RTX 5090",
+      "bfcl80": {"correct": 69, "total": 80},
+      "bfcl90": {"correct": 69, "total": 90},
+      "combined": {"correct": 138, "total": 170},
+      "hospital": {"passed": 8, "total": 14, "strict_average": 0.6553571429},
+      "source_manifest": "docs/benchmarks/data/ministral_3_variant_comparison_20260717.json"
+    },
+    "q4_k_m_iq9075": {
+      "status": "export_succeeded_device_load_failed",
+      "source": "mistralai/Ministral-3-8B-Instruct-2512-GGUF",
+      "source_size_gib": 4.9,
+      "qairt_version": "2.47.0.260601",
+      "forced_context_count": 9,
+      "export_size_gib": 6.5,
+      "build_wall_time_s": 5166,
+      "build_peak_rss_gb": 68.4,
+      "build_cache_gb": 66,
+      "failure": {
+        "qnn_error": 1002,
+        "name": "QNN_COMMON_ERROR_MEM_ALLOC",
+        "failing_fastrpc_map_bytes": 641728512,
+        "linux_available_memory_gib_approx": 33,
+        "interpretation": "HTP/FastRPC/SMMU shared-weight mapping limit, not ordinary Linux RAM exhaustion"
+      },
+      "spill_fill_bufsize_tested_bytes": 128000000
+    },
+    "q3_k_m_iq9075": {
+      "status": "npu_smoke_succeeded_full_benchmark_invalid",
+      "source": "bartowski/mistralai_Ministral-3-8B-Instruct-2512-GGUF",
+      "source_size_gib": 4.0,
+      "qairt_version": "2.47.0.260601",
+      "genie_version": "1.18",
+      "context_count": 9,
+      "export_size_gib": 6.1,
+      "build_wall_time_s": 4468,
+      "build_peak_rss_gb": 84.8,
+      "build_cache_gb": 69,
+      "device_bundle": "/home/ubuntu/ministral3_8b_q3_genie",
+      "native_smoke": {
+        "prompt": "<s>[INST]Reply with exactly OK.[/INST]",
+        "response": "OK.",
+        "elapsed_s": 6.575,
+        "dialog_init_s": 4.394873,
+        "prompt_tokens_per_s": 15.322,
+        "generated_tokens_per_s": 1.9086,
+        "compute": "QnnHtp"
+      },
+      "template_ablation": {
+        "raw_prompt": "Say OK.",
+        "result": "did not terminate after more than 11 minutes",
+        "interpretation": "native Mistral wrapper and EOS behavior are required"
+      },
+      "bfcl_attempt": {
+        "run_name": "ministral3_8b_q3_evk_holdout80_20260717",
+        "valid_score": false,
+        "completed_responses": 2,
+        "failed_connection_entries": 3,
+        "completed_case_latencies_s": [34.578, 64.327],
+        "request_timeout_s": 90,
+        "failure": "repeated server disconnects followed by EVK SSH starvation while network ping remained responsive",
+        "partial_result_path": "agent_arena_results/bfcl_v4_100/ministral3_8b_q3_evk_holdout80_20260717/result/ministral3-8b-q3/non_live/BFCL_v4_irrelevance_result.json",
+        "scoring_policy": "infrastructure failures are not counted as wrong model answers"
+      }
+    }
+  }
+}

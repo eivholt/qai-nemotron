@@ -17,6 +17,7 @@ MODE="${MODE:-thinking_off}"
 HOST="${HOST:-0.0.0.0}"
 PORT="${PORT:-8001}"
 TIMEOUT_S="${TIMEOUT_S:-300}"
+CONFIG_FILE="${CONFIG_FILE:-genie_config.json}"
 PARSER="${PARSER:-}"
 if [[ -z "$PARSER" ]]; then
   if [[ "${MODEL_NAME,,} ${BUNDLE,,}" == *nemotron* ]]; then
@@ -38,6 +39,7 @@ python3 -m agent_arena.openai_genie_server \
   --host "$HOST" \
   --port "$PORT" \
   --timeout-s "$TIMEOUT_S" \
+  --config-file "$CONFIG_FILE" \
   --parser "$PARSER" \
   --multi-tool-policy "$MULTI_TOOL_POLICY" \
   --parallel-safe-tools "$PARALLEL_SAFE_TOOLS" \

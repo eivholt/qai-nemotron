@@ -969,6 +969,108 @@ def pretty_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, indent=4)
 
 
+def render_toolace_pythonic_prompt(payload: dict[str, Any]) -> str:
+    """Render ToolACE 2.5's model-card Python-call chat template."""
+    raw_messages = payload.get("messages", [])
+    messages = list(raw_messages) if isinstance(raw_messages, list) else []
+    raw_tools = payload.get("tools", [])
+    tools = raw_tools if isinstance(raw_tools, list) else []
+
+    system_message = ""
+    if messages and isinstance(messages[0], dict) and messages[0].get("role") == "system":
+        system_message = message_content_text(messages[0].get("content", "")).strip()
+        messages = messages[1:]
+
+    tool_schemas: list[dict[str, Any]] = []
+    for tool in tools:
+        if not isinstance(tool, dict):
+            continue
+        function = tool.get("function", tool)
+        if not isinstance(function, dict) or not function.get("name"):
+            continue
+        parameters = function.get("parameters", {})
+        tool_schemas.append(
+            {
+                "name": function["name"],
+                "description": function.get("description", ""),
+                "arguments": parameters if isinstance(parameters, dict) else {},
+            }
+        )
+
+    parts = [
+        "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n",
+        "You are an expert in composing functions. You are given a question and a set of possible functions. "
+        "Based on the question, you will need to make one or more function/tool calls to achieve the purpose.\n",
+        "If none of the functions can be used, point it out. If the question lacks parameters required by a "
+        "function, also point it out.\n",
+        "You should only return the function call in tool-call sections.\n\n",
+        "If you invoke functions, you MUST use this format: "
+        "[func_name1(param_name1=param_value1), func_name2(param_name2=param_value2)].\n",
+        "Do not include other text when invoking functions.\n",
+        "Here is the list of functions in JSON format that you can invoke:\n",
+        json.dumps(tool_schemas, ensure_ascii=False, separators=(",", ":")),
+        "\n",
+    ]
+    if system_message:
+        parts.extend(["\n", system_message, "\n"])
+    parts.append("<|eot_id|>")
+
+    for message in messages:
+        if not isinstance(message, dict):
+            continue
+        role = str(message.get("role", "user"))
+        if role == "user":
+            parts.extend(
+                [
+                    "<|start_header_id|>user<|end_header_id|>\n\n",
+                    message_content_text(message.get("content", "")).strip(),
+                    "<|eot_id|>",
+                ]
+            )
+        elif role == "assistant" and message.get("tool_calls"):
+            rendered_calls: list[str] = []
+            for call in message.get("tool_calls", []):
+                if not isinstance(call, dict):
+                    continue
+                function = call.get("function", {})
+                if not isinstance(function, dict) or not function.get("name"):
+                    continue
+                arguments = parse_arguments(function.get("arguments", {})) or {}
+                rendered_arguments = ", ".join(
+                    f"{name}={json.dumps(value, ensure_ascii=False, separators=(',', ':'))}"
+                    for name, value in arguments.items()
+                )
+                rendered_calls.append(f"{function['name']}({rendered_arguments})")
+            parts.extend(
+                [
+                    "<|start_header_id|>assistant<|end_header_id|>\n\n[",
+                    ", ".join(rendered_calls),
+                    "]<|eot_id|>",
+                ]
+            )
+        elif role == "assistant":
+            parts.extend(
+                [
+                    "<|start_header_id|>assistant<|end_header_id|>\n\n",
+                    message_content_text(message.get("content", "")).strip(),
+                    "<|eot_id|>",
+                ]
+            )
+        elif role in {"tool", "ipython"}:
+            content = message.get("content", "")
+            rendered_content = content if isinstance(content, str) else json.dumps(content, ensure_ascii=False)
+            parts.extend(
+                [
+                    "<|start_header_id|>ipython<|end_header_id|>\n\n",
+                    rendered_content,
+                    "<|eot_id|>",
+                ]
+            )
+
+    parts.append("<|start_header_id|>assistant<|end_header_id|>\n\n")
+    return "".join(parts)
+
+
 def render_llama3_json_prompt(payload: dict[str, Any], mode: str, tool_output_mode: str = "llama") -> str:
     """Render the vLLM Llama 3.1 JSON tool-calling chat template in plain Python."""
     messages = payload.get("messages", [])
@@ -1594,7 +1696,11 @@ def ast_argument_value(node: ast.AST) -> Any:
     return ast.unparse(node) if hasattr(ast, "unparse") else ""
 
 
-def python_tool_calls_from_text(text: str, start_idx: int) -> list[dict[str, Any]]:
+def python_tool_calls_from_text(
+    text: str,
+    start_idx: int,
+    repair_schema_echo: bool = True,
+) -> list[dict[str, Any]]:
     stripped = text.strip()
     if not stripped:
         return []
@@ -1630,13 +1736,16 @@ def python_tool_calls_from_text(text: str, start_idx: int) -> list[dict[str, Any
             if keyword.arg is None:
                 continue
             arguments[keyword.arg] = ast_argument_value(keyword.value)
-        repaired_arguments, _ = repair_schema_echo_arguments(arguments)
+        if repair_schema_echo:
+            parsed_arguments, _ = repair_schema_echo_arguments(arguments)
+        else:
+            parsed_arguments = arguments
         calls.append(
             {
                 "type": "tool",
                 "id": f"call_{start_idx + len(calls)}",
                 "name": name,
-                "arguments": repaired_arguments,
+                "arguments": parsed_arguments,
             }
         )
     return calls
@@ -1955,6 +2064,24 @@ def llama3_json_parse(raw_text: str) -> tuple[dict[str, Any] | None, str]:
     if merged_calls:
         return merged_calls, "tool_llama3_json"
     return {"type": "final", "content": raw_text.strip()}, "final_llama3_json"
+
+
+def toolace_pythonic_parse(raw_text: str) -> tuple[dict[str, Any] | None, str]:
+    text = raw_text.strip()
+    if text.startswith("<|python_tag|>"):
+        text = text[len("<|python_tag|>") :].strip()
+    if "<|eot_id|>" in text:
+        text = text.split("<|eot_id|>", 1)[0].strip()
+
+    calls = python_tool_calls_from_text(
+        text,
+        1,
+        repair_schema_echo=False,
+    )
+    merged_calls = merge_tool_calls(calls)
+    if merged_calls:
+        return merged_calls, "tool_toolace_pythonic"
+    return {"type": "final", "content": text or raw_text.strip()}, "final_toolace_pythonic"
 
 
 def mistral_tool_parse(raw_text: str) -> tuple[dict[str, Any] | None, str]:
@@ -3482,12 +3609,17 @@ class GenieOpenAIServer(ThreadingHTTPServer):
         super().__init__(server_address, Handler)
         self.args = args
         self.bundle = args.bundle.expanduser().resolve()
+        self.config_path = (self.bundle / args.config_file).resolve()
         self.work_dir = args.work_dir.expanduser().resolve()
         self.work_dir.mkdir(parents=True, exist_ok=True)
         self.counter = 0
         self.pending_tool_calls: list[dict[str, Any]] = []
-        if not (self.bundle / "genie_config.json").exists():
-            raise FileNotFoundError(f"Missing genie_config.json in {self.bundle}")
+        if self.config_path.parent != self.bundle:
+            raise ValueError("--config-file must name a file inside --bundle")
+        if not self.config_path.exists():
+            raise FileNotFoundError(
+                f"Missing Genie config {self.config_path.name} in {self.bundle}"
+            )
         if shutil.which("genie-t2t-run", path=qairt_env()["PATH"]) is None:
             raise FileNotFoundError("genie-t2t-run not found in QAIRT PATH")
 
@@ -3661,7 +3793,7 @@ class GenieOpenAIServer(ThreadingHTTPServer):
                 [
                     "genie-t2t-run",
                     "-c",
-                    "genie_config.json",
+                    str(self.config_path),
                     "--prompt_file",
                     str(prompt_path),
                     "--profile",
@@ -3713,6 +3845,8 @@ class GenieOpenAIServer(ThreadingHTTPServer):
         log_path = self.work_dir / f"{stem}.log"
         if self.args.parser == "llama3_json":
             prompt_text = render_llama3_json_prompt(payload, self.args.mode, self.args.tool_output_mode)
+        elif self.args.parser == "toolace_pythonic":
+            prompt_text = render_toolace_pythonic_prompt(payload)
         elif self.args.parser == "mistral_tool":
             prompt_text = render_mistral_tool_prompt(payload, self.args.mode)
         elif self.args.parser == "qwen3_native":
@@ -3798,7 +3932,7 @@ class GenieOpenAIServer(ThreadingHTTPServer):
                 [
                     "genie-t2t-run",
                     "-c",
-                    "genie_config.json",
+                    str(self.config_path),
                     "--prompt_file",
                     str(prompt_path),
                     "--profile",
@@ -3867,6 +4001,8 @@ class GenieOpenAIServer(ThreadingHTTPServer):
             parsed, parse_status = strict_parse(parse_input)
         elif self.args.parser == "llama3_json":
             parsed, parse_status = llama3_json_parse(parse_input)
+        elif self.args.parser == "toolace_pythonic":
+            parsed, parse_status = toolace_pythonic_parse(parse_input)
         elif self.args.parser == "mistral_tool":
             parsed, parse_status = mistral_tool_parse(parse_input)
         elif self.args.parser == "qwen3_native":
@@ -3879,7 +4015,8 @@ class GenieOpenAIServer(ThreadingHTTPServer):
             parsed, parse_status = qcom_tool_parse(parse_input)
         else:
             parsed, parse_status = tolerant_parse(parse_input)
-        parsed = normalize_tool_call_names_for_payload(parsed, payload)
+        if self.args.parser != "toolace_pythonic":
+            parsed = normalize_tool_call_names_for_payload(parsed, payload)
         if self.args.parser in {"nemotron_bfcl_official_strict_schema_enhanced", "nemotron_bfcl_official_strict_schema_enhanced_guarded", "nemotron_bfcl_official_user_selective_schema_supported", "nemotron_bfcl_modelcard_supported", "qcom_tool"}:
             parsed, did_final_recover = recover_final_tool_call_for_payload(parsed, payload)
             if did_final_recover:
@@ -4041,12 +4178,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8001)
     parser.add_argument("--timeout-s", type=int, default=300)
+    parser.add_argument("--config-file", default="genie_config.json")
     parser.add_argument(
         "--parser",
         choices=[
             "strict",
             "tolerant",
             "llama3_json",
+            "toolace_pythonic",
             "mistral_tool",
             "qwen3_native",
             "qcom_tool",
