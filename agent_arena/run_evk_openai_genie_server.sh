@@ -4,6 +4,13 @@ set -euo pipefail
 cd "$HOME/qai-nemotron"
 source "$HOME/qairt-env.sh"
 
+if [[ -n "${QAIRT_ROOT:-}" ]]; then
+  TARGET="aarch64-oe-linux-gcc11.2"
+  export PATH="$QAIRT_ROOT/bin:$QAIRT_ROOT/bin/$TARGET:$PATH"
+  export LD_LIBRARY_PATH="$QAIRT_ROOT/lib/$TARGET:${LD_LIBRARY_PATH:-}"
+  export ADSP_LIBRARY_PATH="$QAIRT_ROOT/lib/hexagon-v73/unsigned;${ADSP_LIBRARY_PATH:-}"
+fi
+
 BUNDLE="${BUNDLE:-$HOME/nemotron_genie}"
 MODEL_NAME="${MODEL_NAME:-nemotron-thinking-off}"
 MODE="${MODE:-thinking_off}"

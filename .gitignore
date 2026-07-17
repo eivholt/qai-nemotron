@@ -14,3 +14,6 @@ host_bench/__pycache__
 quantize_cl4096_aimet226.log
 stock_llama_iq9075_export.log
 agent_arena/.env
+logs/
+qwen3_iq9075_genie/
+*.orig

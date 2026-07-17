@@ -1,0 +1,21 @@
+{
+  "source_run": "agent_arena_results/bfcl_v4_100/bfcl_v4_signal100_20260624",
+  "source_model": "evk-nemotron-native-off-bfcl",
+  "reason": "Selected BFCL V4 signal100 cases whose prior EVK Genie output contained context-window failure markers.",
+  "markers": [
+    "Context Size was exceeded",
+    "Failed to query"
+  ],
+  "excluded_ids": [
+    "multi_turn_base_0",
+    "multi_turn_base_100",
+    "multi_turn_base_199",
+    "multi_turn_long_context_0",
+    "multi_turn_long_context_199",
+    "multi_turn_miss_func_0",
+    "multi_turn_miss_func_199",
+    "multi_turn_miss_param_0",
+    "multi_turn_miss_param_100",
+    "multi_turn_miss_param_199"
+  ]
+}

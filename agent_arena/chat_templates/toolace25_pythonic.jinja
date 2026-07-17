@@ -1,0 +1,56 @@
+{{- bos_token }}
+{%- set system_message = '' %}
+{%- if messages and messages[0]['role'] == 'system' %}
+  {%- set system_message = messages[0]['content'] | trim %}
+  {%- set messages = messages[1:] %}
+{%- endif %}
+{{- '<|start_header_id|>system<|end_header_id|>\n\n' }}
+{{- 'You are an expert in composing functions. You are given a question and a set of possible functions. Based on the question, you will need to make one or more function/tool calls to achieve the purpose.\n' }}
+{{- 'If none of the functions can be used, point it out. If the question lacks parameters required by a function, also point it out.\n' }}
+{{- 'You should only return the function call in tool-call sections.\n\n' }}
+{{- 'If you invoke functions, you MUST use this format: [func_name1(param_name1=param_value1), func_name2(param_name2=param_value2)].\n' }}
+{{- 'Do not include other text when invoking functions.\n' }}
+{{- 'Here is the list of functions in JSON format that you can invoke:\n' }}
+{{- '[' }}
+{%- for tool in tools | default([]) %}
+  {%- set fn = tool['function'] %}
+  {%- set rendered = {'name': fn['name'], 'description': fn.get('description', ''), 'arguments': fn.get('parameters', {})} %}
+  {{- rendered | tojson }}
+  {%- if not loop.last %}{{- ',\n' }}{%- endif %}
+{%- endfor %}
+{{- ']\n' }}
+{%- if system_message %}
+  {{- '\n' + system_message + '\n' }}
+{%- endif %}
+{{- '<|eot_id|>' }}
+{%- for message in messages %}
+  {%- if message['role'] == 'user' %}
+    {{- '<|start_header_id|>user<|end_header_id|>\n\n' + message['content'] | trim + '<|eot_id|>' }}
+  {%- elif message['role'] == 'assistant' and message.get('tool_calls') %}
+    {{- '<|start_header_id|>assistant<|end_header_id|>\n\n[' }}
+    {%- for call in message['tool_calls'] %}
+      {%- set fn = call['function'] %}
+      {{- fn['name'] + '(' }}
+      {%- for name, value in fn['arguments'].items() %}
+        {{- name + '=' + value | tojson }}
+        {%- if not loop.last %}{{- ', ' }}{%- endif %}
+      {%- endfor %}
+      {{- ')' }}
+      {%- if not loop.last %}{{- ', ' }}{%- endif %}
+    {%- endfor %}
+    {{- ']<|eot_id|>' }}
+  {%- elif message['role'] == 'assistant' %}
+    {{- '<|start_header_id|>assistant<|end_header_id|>\n\n' + message.get('content', '') | trim + '<|eot_id|>' }}
+  {%- elif message['role'] in ['tool', 'ipython'] %}
+    {{- '<|start_header_id|>ipython<|end_header_id|>\n\n' }}
+    {%- if message['content'] is string %}
+      {{- message['content'] }}
+    {%- else %}
+      {{- message['content'] | tojson }}
+    {%- endif %}
+    {{- '<|eot_id|>' }}
+  {%- endif %}
+{%- endfor %}
+{%- if add_generation_prompt %}
+  {{- '<|start_header_id|>assistant<|end_header_id|>\n\n' }}
+{%- endif %}
