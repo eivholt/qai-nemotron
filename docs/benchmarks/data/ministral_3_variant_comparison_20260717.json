@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "generated_utc": "2026-07-17",
+  "scope": "RTX 5090 BF16 reference; no IQ9075 export or NPU result",
+  "test_order": [
+    "mistralai/Ministral-3-3B-Reasoning-2512",
+    "mistralai/Ministral-3-8B-Instruct-2512-BF16",
+    "mistralai/Ministral-3-8B-Reasoning-2512"
+  ],
+  "benchmark_contract": {
+    "bfcl80_case_file": "agent_arena/benchmark_selections/bfcl_v4_holdout80_nonweb_20260627.json",
+    "bfcl90_case_file": "agent_arena/benchmark_selections/bfcl_v4_fresh90_nonweb_20260628.json",
+    "selection_overlap": 0,
+    "dedicated_web_search_categories_included": false,
+    "hospital_case_count": 14,
+    "hospital_is_iterative": true,
+    "hospital_is_strict": true,
+    "llm_judge_used": false
+  },
+  "host_runtime": {
+    "gpu": "NVIDIA GeForce RTX 5090",
+    "vllm": "0.20.2",
+    "mistral_common": "1.11.2",
+    "max_model_len": 8192,
+    "tool_call_parser": "mistral",
+    "request_threads": 1
+  },
+  "deployments": [
+    {
+      "deployment_id": "ministral_3b_instruct_2512_host_bf16_baseline",
+      "model": "mistralai/Ministral-3-3B-Instruct-2512-BF16",
+      "variant": "instruct",
+      "parameters": "3.3B",
+      "is_new_run": false,
+      "request_settings": {"temperature": 0.0},
+      "bfcl80": {
+        "correct": 66,
+        "total": 80,
+        "accuracy": 0.825,
+        "aggregate_output_tokens_per_s": 183.4
+      },
+      "bfcl90": {
+        "correct": 64,
+        "total": 90,
+        "accuracy": 0.7111111111,
+        "aggregate_output_tokens_per_s": 186.8
+      },
+      "combined": {"correct": 130, "total": 170, "accuracy": 0.7647058824},
+      "hospital": {"passed": 9, "total": 14, "strict_average": 0.642857},
+      "source_manifest": "docs/benchmarks/data/agentic_model_comparison_20260716.json"
+    },
+    {
+      "deployment_id": "ministral_3b_reasoning_2512_host_bf16",
+      "model": "mistralai/Ministral-3-3B-Reasoning-2512",
+      "variant": "reasoning",
+      "parameters": "3.3B",
+      "is_new_run": true,
+      "request_settings": {
+        "temperature": 0.7,
+        "top_p": 0.95,
+        "max_tokens": 4096,
+        "system_prompt": "model-card SYSTEM_PROMPT.txt as structured Mistral thinking content",
+        "reasoning_parser": "mistral"
+      },
+      "bfcl80": {
+        "correct": 34,
+        "total": 80,
+        "accuracy": 0.425,
+        "input_tokens": 47196,
+        "output_tokens": 101753,
+        "summed_request_latency_s": 523.4076,
+        "aggregate_output_tokens_per_s": 194.405,
+        "median_request_latency_s": 4.717,
+        "median_output_tokens": 930,
+        "median_request_output_tokens_per_s": 195.656,
+        "summary_path": "agent_arena_results/bfcl_v4_100/ministral_3b_reasoning_holdout80_clean_20260717/summary_host-ministral-3b-reasoning-2512-h80-clean.json"
+      },
+      "bfcl90": {
+        "correct": 28,
+        "total": 90,
+        "accuracy": 0.3111111111,
+        "input_tokens": 48678,
+        "output_tokens": 124240,
+        "summed_request_latency_s": 636.0005,
+        "aggregate_output_tokens_per_s": 195.346,
+        "median_request_latency_s": 5.02,
+        "median_output_tokens": 1005,
+        "median_request_output_tokens_per_s": 196.81,
+        "summary_path": "agent_arena_results/bfcl_v4_100/ministral_3b_reasoning_fresh90_clean_20260717/summary_host-ministral-3b-reasoning-2512-f90-clean.json"
+      },
+      "combined": {"correct": 62, "total": 170, "accuracy": 0.3647058824},
+      "hospital": {
+        "passed": 9,
+        "total": 14,
+        "strict_average": 0.642857,
+        "infrastructure_failures": [],
+        "context_exhaustions": [],
+        "results_path": "agent_arena_results/ministral_variants/20260717T023606Z__pydantic_hospital_logistics__host_ministral_3b_reasoning_2512_hospital__stock__openai-compatible/results.strict-final.json"
+      }
+    },
+    {
+      "deployment_id": "ministral_8b_instruct_2512_host_bf16",
+      "model": "mistralai/Ministral-3-8B-Instruct-2512-BF16",
+      "variant": "instruct",
+      "parameters": "8B",
+      "is_new_run": true,
+      "request_settings": {
+        "temperature": 0.001,
+        "max_tokens": 4096,
+        "bfcl_system_prompt": "model-card SYSTEM_PROMPT.txt",
+        "hospital_system_prompt": "hospital task prompt only"
+      },
+      "bfcl80": {
+        "correct": 69,
+        "total": 80,
+        "accuracy": 0.8625,
+        "input_tokens": 79916,
+        "output_tokens": 8083,
+        "summed_request_latency_s": 85.6664,
+        "aggregate_output_tokens_per_s": 94.354,
+        "median_request_latency_s": 0.486,
+        "median_output_tokens": 44,
+        "median_request_output_tokens_per_s": 91.348,
+        "summary_path": "agent_arena_results/bfcl_v4_100/ministral_8b_instruct_holdout80_20260717/summary_host-ministral-8b-instruct-2512-h80.json"
+      },
+      "bfcl90": {
+        "correct": 69,
+        "total": 90,
+        "accuracy": 0.7666666667,
+        "input_tokens": 85488,
+        "output_tokens": 10744,
+        "summed_request_latency_s": 112.8532,
+        "aggregate_output_tokens_per_s": 95.203,
+        "median_request_latency_s": 0.528,
+        "median_output_tokens": 49,
+        "median_request_output_tokens_per_s": 93.37,
+        "summary_path": "agent_arena_results/bfcl_v4_100/ministral_8b_instruct_fresh90_20260717/summary_host-ministral-8b-instruct-2512-f90.json"
+      },
+      "combined": {"correct": 138, "total": 170, "accuracy": 0.8117647059},
+      "hospital": {
+        "passed": 8,
+        "total": 14,
+        "strict_average": 0.6553571429,
+        "infrastructure_failures": [],
+        "context_exhaustions": [],
+        "results_path": "agent_arena_results/ministral_variants/20260717T024915Z__pydantic_hospital_logistics__host_ministral_8b_instruct_2512_hospital_task_system__stock__openai-compatible/results.strict-final.json"
+      },
+      "hospital_card_prompt_ablation": {
+        "passed": 7,
+        "total": 14,
+        "strict_average": 0.6077380952,
+        "context_exhaustions": ["hospital_L2_cold_chain_robot_low"],
+        "results_path": "agent_arena_results/ministral_variants/20260717T024750Z__pydantic_hospital_logistics__host_ministral_8b_instruct_2512_hospital__stock__openai-compatible/results.strict-final.json"
+      }
+    },
+    {
+      "deployment_id": "ministral_8b_reasoning_2512_host_bf16",
+      "model": "mistralai/Ministral-3-8B-Reasoning-2512",
+      "variant": "reasoning",
+      "parameters": "8B",
+      "is_new_run": true,
+      "request_settings": {
+        "temperature": 0.7,
+        "top_p": 0.95,
+        "max_tokens": 4096,
+        "system_prompt": "model-card SYSTEM_PROMPT.txt as structured Mistral thinking content",
+        "reasoning_parser": "mistral"
+      },
+      "bfcl80": {
+        "correct": 38,
+        "total": 80,
+        "accuracy": 0.475,
+        "input_tokens": 47196,
+        "output_tokens": 95030,
+        "summed_request_latency_s": 994.8637,
+        "aggregate_output_tokens_per_s": 95.521,
+        "median_request_latency_s": 8.377,
+        "median_output_tokens": 803,
+        "median_request_output_tokens_per_s": 95.926,
+        "summary_path": "agent_arena_results/bfcl_v4_100/ministral_8b_reasoning_holdout80_20260717/summary_host-ministral-8b-reasoning-2512-h80.json"
+      },
+      "bfcl90": {
+        "correct": 30,
+        "total": 90,
+        "accuracy": 0.3333333333,
+        "input_tokens": 48678,
+        "output_tokens": 122649,
+        "summed_request_latency_s": 1282.7964,
+        "aggregate_output_tokens_per_s": 95.611,
+        "median_request_latency_s": 10.249,
+        "median_output_tokens": 1002,
+        "median_request_output_tokens_per_s": 95.896,
+        "summary_path": "agent_arena_results/bfcl_v4_100/ministral_8b_reasoning_fresh90_20260717/summary_host-ministral-8b-reasoning-2512-f90.json"
+      },
+      "combined": {"correct": 68, "total": 170, "accuracy": 0.4},
+      "hospital": {
+        "passed": 8,
+        "total": 14,
+        "strict_average": 0.5773809524,
+        "infrastructure_failures": [],
+        "context_exhaustions": ["hospital_L3_replan_priority_medication"],
+        "results_path": "agent_arena_results/ministral_variants/20260717T033358Z__pydantic_hospital_logistics__host_ministral_8b_reasoning_2512_hospital__stock__openai-compatible/results.strict-final.json"
+      }
+    }
+  ],
+  "conclusion": {
+    "best_practical_upgrade": "mistralai/Ministral-3-8B-Instruct-2512-BF16",
+    "bfcl_gain_over_3b_instruct_correct": 8,
+    "bfcl_gain_over_3b_instruct_percentage_points": 4.70588235,
+    "reasoning_finding": "Always-on reasoning substantially reduced direct tool-call completion and increased latency; it did not improve the strict hospital pass count."
+  }
+}

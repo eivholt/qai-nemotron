@@ -1,0 +1,2758 @@
+{
+  "schema_version": 1,
+  "snapshot_status": "complete",
+  "generated_utc": "2026-07-17T01:44:07Z",
+  "benchmark_contract": {
+    "bfcl_version": "BFCL V4 partial evaluation with official deterministic scorer",
+    "official_leaderboard_submission": false,
+    "dedicated_web_search_categories_included": false,
+    "bfcl80_case_file": "agent_arena/benchmark_selections/bfcl_v4_holdout80_nonweb_20260627.json",
+    "bfcl90_case_file": "agent_arena/benchmark_selections/bfcl_v4_fresh90_nonweb_20260628.json",
+    "selection_overlap": 0,
+    "hospital_cases": [
+      "hospital_O1-O5",
+      "hospital_P1-P4",
+      "hospital_L0-L4"
+    ],
+    "hospital_is_iterative": true,
+    "llm_judge_used": false,
+    "strict_hospital_penalties": [
+      "missing",
+      "wrong arguments",
+      "forbidden",
+      "excess",
+      "duplicate",
+      "unexecuted",
+      "out-of-order optional calls",
+      "context exhaustion",
+      "infrastructure failure"
+    ],
+    "strict_scoring_revision": "2026-07-17-final",
+    "runtime_failure_policy": "Context exhaustion, request limits, protocol failures, and QNN/device initialization failures are recorded separately; none can pass."
+  },
+  "platform_gaps": [
+    {
+      "model": "deepreinforce-ai/Ornith-1.0-9B",
+      "status": "NPU export blocked",
+      "reason": "Qwen3.5 hybrid GatedDeltaNet/linear-attention state is unsupported by the QAI Hub Models 0.56 plain-Qwen3 exporter and current Genie/QNN path."
+    },
+    {
+      "model": "mistralai/Mistral-7B-Instruct-v0.3",
+      "status": "public accelerator binary incompatible",
+      "reason": "Available context binary targets Hexagon v79; IQ9075 exposes Hexagon v73."
+    }
+  ],
+  "gguf_cpu_thread_scaling": {
+    "model": "Ornith-1.0-9B Q4_K_M",
+    "prompt_test": "pp32",
+    "generation_test": "tg8",
+    "measurements": [
+      {
+        "threads": 1,
+        "prompt_tokens_per_s": 3.58,
+        "generation_tokens_per_s": 1.68
+      },
+      {
+        "threads": 2,
+        "prompt_tokens_per_s": 6.95,
+        "generation_tokens_per_s": 3.11
+      },
+      {
+        "threads": 4,
+        "prompt_tokens_per_s": 13.28,
+        "generation_tokens_per_s": 5.64
+      },
+      {
+        "threads": 8,
+        "prompt_tokens_per_s": 21.51,
+        "generation_tokens_per_s": 7.26
+      }
+    ],
+    "conclusion": "GGUF is not single-core; use a native ARM build with -t 8 -tb 8 on this EVK."
+  },
+  "deployments": [
+    {
+      "deployment_id": "ornith_9b_host_bf16",
+      "model": "deepreinforce-ai/Ornith-1.0-9B",
+      "parameters": "9B",
+      "location": "RTX 5090 host",
+      "compute": "GPU",
+      "precision_or_quantization": "BF16",
+      "runtime": "vLLM 0.20.2",
+      "tool_renderer_parser": "qwen3_xml tool parser + qwen3 reasoning parser",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.6,
+        "top_k": 20,
+        "top_p": 0.95
+      },
+      "validity": "valid",
+      "caveat": "",
+      "bfcl80": {
+        "correct": 71,
+        "total": 80,
+        "accuracy": 0.8875,
+        "categories": {
+          "irrelevance": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 7,
+            "accuracy": 0.8571428571428571
+          },
+          "live_multiple": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_parallel": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_parallel_multiple": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 8,
+            "total": 10,
+            "accuracy": 0.8
+          },
+          "multiple": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "parallel_multiple": {
+            "correct": 6,
+            "total": 7,
+            "accuracy": 0.8571428571428571
+          },
+          "simple_python": {
+            "correct": 12,
+            "total": 12,
+            "accuracy": 1.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_ornith9b_bf16_holdout80_20260716/summary_host-ornith9b-bf16.json"
+      },
+      "bfcl90": {
+        "correct": 78,
+        "total": 90,
+        "accuracy": 0.8666666666666667,
+        "categories": {
+          "irrelevance": {
+            "correct": 8,
+            "total": 9,
+            "accuracy": 0.8888888888888888
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_multiple": {
+            "correct": 6,
+            "total": 9,
+            "accuracy": 0.6666666666666666
+          },
+          "live_parallel": {
+            "correct": 3,
+            "total": 5,
+            "accuracy": 0.6
+          },
+          "live_parallel_multiple": {
+            "correct": 5,
+            "total": 5,
+            "accuracy": 1.0
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 7,
+            "total": 11,
+            "accuracy": 0.6363636363636364
+          },
+          "multiple": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0
+          },
+          "parallel": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0
+          },
+          "parallel_multiple": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "simple_python": {
+            "correct": 13,
+            "total": 13,
+            "accuracy": 1.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_ornith9b_bf16_fresh90_20260716/summary_host-ornith9b-bf16.json"
+      },
+      "bfcl_combined": {
+        "correct": 149,
+        "total": 170,
+        "accuracy": 0.8764705882352941
+      },
+      "hospital_hard_strict": {
+        "passed": 8,
+        "total": 14,
+        "strict_average": 0.614087,
+        "passed_cases": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_O2_escalate_with_many_options",
+          "hospital_O3_cold_chain_with_many_options",
+          "hospital_O4_elevator_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P3_cold_chain_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [
+          "hospital_L0_simple_linen_delivery",
+          "hospital_L1_sample_elevator_out",
+          "hospital_L2_cold_chain_robot_low",
+          "hospital_L3_replan_priority_medication",
+          "hospital_L4_blood_product_conflict_escalate"
+        ],
+        "failure_kinds": {
+          "context_exhaustion": 5,
+          "passed": 8,
+          "unsafe_or_forbidden_tool": 1
+        },
+        "runtime_diagnoses": {
+          "context_exhaustion": 5,
+          "none": 9
+        },
+        "results_path": "agent_arena_results/ornith_host/20260716T181740Z__pydantic_hospital_logistics__ornith_host_bf16_hospital_hard__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "agent_arena_results/ornith_host/20260716T181740Z__pydantic_hospital_logistics__ornith_host_bf16_hospital_hard__stock__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "ornith_9b_evk_q4km_cpu",
+      "model": "deepreinforce-ai/Ornith-1.0-9B-GGUF",
+      "parameters": "9B",
+      "location": "IQ9075 EVK",
+      "compute": "CPU (8 Cortex-A78C cores)",
+      "precision_or_quantization": "Q4_K_M GGUF",
+      "runtime": "llama.cpp 0dc74e3 native ARM build",
+      "tool_renderer_parser": "llama.cpp Jinja + qwen3-style reasoning/tool split",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.6,
+        "top_k": 20,
+        "top_p": 0.95
+      },
+      "validity": "valid",
+      "caveat": "Valid on-device CPU fallback; current QAI/QNN path lacks Qwen3.5 GatedDeltaNet support.",
+      "bfcl80": {
+        "correct": 69,
+        "total": 80,
+        "accuracy": 0.8625,
+        "categories": {
+          "irrelevance": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "live_irrelevance": {
+            "correct": 4,
+            "total": 7,
+            "accuracy": 0.5714285714285714
+          },
+          "live_multiple": {
+            "correct": 5,
+            "total": 8,
+            "accuracy": 0.625
+          },
+          "live_parallel": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_parallel_multiple": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_relevance": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_simple": {
+            "correct": 8,
+            "total": 10,
+            "accuracy": 0.8
+          },
+          "multiple": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "parallel_multiple": {
+            "correct": 6,
+            "total": 7,
+            "accuracy": 0.8571428571428571
+          },
+          "simple_python": {
+            "correct": 12,
+            "total": 12,
+            "accuracy": 1.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/evk_ornith9b_q4km_cpu_holdout80_20260716/summary_evk-ornith9b-q4km-cpu.json"
+      },
+      "bfcl90": {
+        "correct": 76,
+        "total": 90,
+        "accuracy": 0.8444444444444444,
+        "categories": {
+          "irrelevance": {
+            "correct": 8,
+            "total": 9,
+            "accuracy": 0.8888888888888888
+          },
+          "live_irrelevance": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "live_multiple": {
+            "correct": 5,
+            "total": 9,
+            "accuracy": 0.5555555555555556
+          },
+          "live_parallel": {
+            "correct": 3,
+            "total": 5,
+            "accuracy": 0.6
+          },
+          "live_parallel_multiple": {
+            "correct": 5,
+            "total": 5,
+            "accuracy": 1.0
+          },
+          "live_relevance": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_simple": {
+            "correct": 7,
+            "total": 11,
+            "accuracy": 0.6363636363636364
+          },
+          "multiple": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0
+          },
+          "parallel": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0
+          },
+          "parallel_multiple": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "simple_python": {
+            "correct": 12,
+            "total": 13,
+            "accuracy": 0.9230769230769231
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/evk_ornith9b_q4km_cpu_fresh90_20260716/summary_evk-ornith9b-q4km-cpu.json"
+      },
+      "bfcl_combined": {
+        "correct": 145,
+        "total": 170,
+        "accuracy": 0.8529411764705882
+      },
+      "hospital_hard_strict": {
+        "passed": 9,
+        "total": 14,
+        "strict_average": 0.796173,
+        "passed_cases": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_O2_escalate_with_many_options",
+          "hospital_O3_cold_chain_with_many_options",
+          "hospital_O4_elevator_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P3_cold_chain_from_action_options",
+          "hospital_P4_elevator_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [],
+        "failure_kinds": {
+          "agent_exception": 1,
+          "passed": 9,
+          "protocol_error": 1,
+          "wrong_tool_behavior": 3
+        },
+        "runtime_diagnoses": {
+          "agent_exception": 1,
+          "none": 12,
+          "tool_protocol_error": 1
+        },
+        "results_path": "agent_arena_results/ornith_evk/20260716T211741Z__pydantic_hospital_logistics__ornith_evk_q4km_hospital_hard_2048__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "agent_arena_results/ornith_evk/20260716T211741Z__pydantic_hospital_logistics__ornith_evk_q4km_hospital_hard_2048__stock__openai-compatible/results.json"
+      },
+      "performance": {
+        "bfcl80_end_to_end_output_tokens_per_s": 3.93,
+        "bfcl90_end_to_end_output_tokens_per_s": 4.19,
+        "native_generation_tokens_per_s": "6.9-7.2",
+        "native_prompt_tokens_per_s": "about 26",
+        "cpu_utilization_percent": 734,
+        "resident_memory_gb": "about 18"
+      }
+    },
+    {
+      "deployment_id": "qwen3_4b_host_bf16_native",
+      "model": "Qwen/Qwen3-4B-Instruct-2507",
+      "parameters": "4B",
+      "location": "RTX 5090 host",
+      "compute": "GPU",
+      "precision_or_quantization": "BF16",
+      "runtime": "Transformers OpenAI bridge",
+      "tool_renderer_parser": "Qwen native tools/tool_call/tool_response",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.001,
+        "note": "Client near-deterministic reference"
+      },
+      "validity": "valid",
+      "caveat": "",
+      "bfcl80": {
+        "correct": 70,
+        "total": 80,
+        "accuracy": 0.875,
+        "categories": {
+          "irrelevance": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 7,
+            "accuracy": 0.8571428571428571
+          },
+          "live_multiple": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_parallel": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_parallel_multiple": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_relevance": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_simple": {
+            "correct": 7,
+            "total": 10,
+            "accuracy": 0.7
+          },
+          "multiple": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel_multiple": {
+            "correct": 6,
+            "total": 7,
+            "accuracy": 0.8571428571428571
+          },
+          "simple_python": {
+            "correct": 12,
+            "total": 12,
+            "accuracy": 1.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260629_qwen3_native_holdout80/summary_host-qwen3-native.json"
+      },
+      "bfcl90": {
+        "correct": 70,
+        "total": 90,
+        "accuracy": 0.7777777777777778,
+        "categories": {
+          "irrelevance": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "live_irrelevance": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "live_multiple": {
+            "correct": 6,
+            "total": 9,
+            "accuracy": 0.6666666666666666
+          },
+          "live_parallel": {
+            "correct": 2,
+            "total": 5,
+            "accuracy": 0.4
+          },
+          "live_parallel_multiple": {
+            "correct": 4,
+            "total": 5,
+            "accuracy": 0.8
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 5,
+            "total": 11,
+            "accuracy": 0.45454545454545453
+          },
+          "multiple": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "parallel": {
+            "correct": 8,
+            "total": 9,
+            "accuracy": 0.8888888888888888
+          },
+          "parallel_multiple": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "simple_python": {
+            "correct": 13,
+            "total": 13,
+            "accuracy": 1.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260629_qwen3_native_fresh90/summary_host-qwen3-native.json"
+      },
+      "bfcl_combined": {
+        "correct": 140,
+        "total": 170,
+        "accuracy": 0.8235294117647058
+      },
+      "hospital_hard_strict": {
+        "passed": 9,
+        "total": 14,
+        "strict_average": 0.778912,
+        "passed_cases": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_O2_escalate_with_many_options",
+          "hospital_O3_cold_chain_with_many_options",
+          "hospital_O4_elevator_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P3_cold_chain_from_action_options",
+          "hospital_P4_elevator_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [],
+        "failure_kinds": {
+          "agent_exception": 3,
+          "passed": 9,
+          "wrong_tool_arguments": 1,
+          "wrong_tool_behavior": 1
+        },
+        "runtime_diagnoses": {
+          "agent_request_limit": 3,
+          "none": 11
+        },
+        "results_path": "/home/eivho/agent_arena_results/20260628T235712Z__pydantic_hospital_logistics__host_qwen3_native_hospital_hard_20260629__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "/home/eivho/agent_arena_results/20260628T235712Z__pydantic_hospital_logistics__host_qwen3_native_hospital_hard_20260629__stock__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "qwen3_4b_evk_w4a16_export_default",
+      "model": "Qwen/Qwen3-4B-Instruct-2507",
+      "parameters": "4B",
+      "location": "IQ9075 EVK",
+      "compute": "Hexagon HTP/NPU",
+      "precision_or_quantization": "W4A16",
+      "runtime": "Genie/QNN",
+      "tool_renderer_parser": "qwen3_native",
+      "context_tokens": 2048,
+      "effective_sampling": {
+        "temperature": 0.8,
+        "top_k": 40,
+        "top_p": 0.95,
+        "seed": 42
+      },
+      "validity": "valid",
+      "caveat": "QAI Hub generated bundle defaults; OpenAI client temperature is not applied by the bridge.",
+      "bfcl80": {
+        "correct": 51,
+        "total": 80,
+        "accuracy": 0.6375,
+        "categories": {
+          "irrelevance": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_irrelevance": {
+            "correct": 5,
+            "total": 7,
+            "accuracy": 0.7142857142857143
+          },
+          "live_multiple": {
+            "correct": 2,
+            "total": 8,
+            "accuracy": 0.25
+          },
+          "live_parallel": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5
+          },
+          "live_parallel_multiple": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5
+          },
+          "live_relevance": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5
+          },
+          "live_simple": {
+            "correct": 6,
+            "total": 10,
+            "accuracy": 0.6
+          },
+          "multiple": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "parallel": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "parallel_multiple": {
+            "correct": 3,
+            "total": 7,
+            "accuracy": 0.42857142857142855
+          },
+          "simple_python": {
+            "correct": 11,
+            "total": 12,
+            "accuracy": 0.9166666666666666
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/evk_qwen3_w4a16_holdout80_20260716/summary_evk-qwen3-w4a16-native.json"
+      },
+      "bfcl90": {
+        "correct": 60,
+        "total": 90,
+        "accuracy": 0.6666666666666666,
+        "categories": {
+          "irrelevance": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_multiple": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444
+          },
+          "live_parallel": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          },
+          "live_parallel_multiple": {
+            "correct": 2,
+            "total": 5,
+            "accuracy": 0.4
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 3,
+            "total": 11,
+            "accuracy": 0.2727272727272727
+          },
+          "multiple": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "parallel": {
+            "correct": 6,
+            "total": 9,
+            "accuracy": 0.6666666666666666
+          },
+          "parallel_multiple": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "simple_python": {
+            "correct": 13,
+            "total": 13,
+            "accuracy": 1.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/evk_qwen3_w4a16_fresh90_20260716/summary_evk-qwen3-w4a16-native.json"
+      },
+      "bfcl_combined": {
+        "correct": 111,
+        "total": 170,
+        "accuracy": 0.6529411764705882
+      },
+      "hospital_hard_strict": {
+        "passed": 8,
+        "total": 14,
+        "strict_average": 0.571429,
+        "passed_cases": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_O2_escalate_with_many_options",
+          "hospital_O4_elevator_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P3_cold_chain_from_action_options",
+          "hospital_P4_elevator_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [
+          "hospital_L0_simple_linen_delivery",
+          "hospital_L1_sample_elevator_out",
+          "hospital_L2_cold_chain_robot_low",
+          "hospital_L3_replan_priority_medication",
+          "hospital_L4_blood_product_conflict_escalate"
+        ],
+        "failure_kinds": {
+          "context_exhaustion": 5,
+          "passed": 8,
+          "wrong_tool_behavior": 1
+        },
+        "runtime_diagnoses": {
+          "context_exhaustion": 5,
+          "none": 9
+        },
+        "results_path": "agent_arena_results/qwen3_evk/20260716T175719Z__pydantic_hospital_logistics__qwen3_evk_w4a16_hospital_hard_clean__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "agent_arena_results/qwen3_evk/20260716T175719Z__pydantic_hospital_logistics__qwen3_evk_w4a16_hospital_hard_clean__stock__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "qwen3_4b_evk_w4a16_deterministic",
+      "model": "Qwen/Qwen3-4B-Instruct-2507",
+      "parameters": "4B",
+      "location": "IQ9075 EVK",
+      "compute": "Hexagon HTP/NPU",
+      "precision_or_quantization": "W4A16",
+      "runtime": "Genie/QNN",
+      "tool_renderer_parser": "qwen3_native",
+      "context_tokens": 2048,
+      "effective_sampling": {
+        "temperature": 0.0,
+        "top_k": 1,
+        "top_p": 1.0,
+        "seed": 42
+      },
+      "validity": "valid",
+      "caveat": "Best combined EVK sampler; long hospital cases still over-call and exceed the 2048 context.",
+      "bfcl80": {
+        "correct": 58,
+        "total": 80,
+        "accuracy": 0.725,
+        "categories": {
+          "irrelevance": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "live_irrelevance": {
+            "correct": 5,
+            "total": 7,
+            "accuracy": 0.7142857142857143
+          },
+          "live_multiple": {
+            "correct": 3,
+            "total": 8,
+            "accuracy": 0.375
+          },
+          "live_parallel": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_parallel_multiple": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5
+          },
+          "live_relevance": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_simple": {
+            "correct": 7,
+            "total": 10,
+            "accuracy": 0.7
+          },
+          "multiple": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "parallel_multiple": {
+            "correct": 3,
+            "total": 7,
+            "accuracy": 0.42857142857142855
+          },
+          "simple_python": {
+            "correct": 12,
+            "total": 12,
+            "accuracy": 1.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/evk_qwen3_w4a16_det_holdout80_20260716/summary_evk-qwen3-w4a16-native-det.json"
+      },
+      "bfcl90": {
+        "correct": 58,
+        "total": 90,
+        "accuracy": 0.6444444444444445,
+        "categories": {
+          "irrelevance": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_multiple": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444
+          },
+          "live_parallel": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          },
+          "live_parallel_multiple": {
+            "correct": 2,
+            "total": 5,
+            "accuracy": 0.4
+          },
+          "live_relevance": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_simple": {
+            "correct": 3,
+            "total": 11,
+            "accuracy": 0.2727272727272727
+          },
+          "multiple": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "parallel": {
+            "correct": 6,
+            "total": 9,
+            "accuracy": 0.6666666666666666
+          },
+          "parallel_multiple": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "simple_python": {
+            "correct": 13,
+            "total": 13,
+            "accuracy": 1.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/evk_qwen3_w4a16_det_fresh90_20260716/summary_evk-qwen3-w4a16-native-det.json"
+      },
+      "bfcl_combined": {
+        "correct": 116,
+        "total": 170,
+        "accuracy": 0.6823529411764706
+      },
+      "hospital_hard_strict": {
+        "passed": 9,
+        "total": 14,
+        "strict_average": 0.642857,
+        "passed_cases": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_O2_escalate_with_many_options",
+          "hospital_O3_cold_chain_with_many_options",
+          "hospital_O4_elevator_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P3_cold_chain_from_action_options",
+          "hospital_P4_elevator_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [
+          "hospital_L0_simple_linen_delivery",
+          "hospital_L1_sample_elevator_out",
+          "hospital_L2_cold_chain_robot_low",
+          "hospital_L3_replan_priority_medication",
+          "hospital_L4_blood_product_conflict_escalate"
+        ],
+        "failure_kinds": {
+          "context_exhaustion": 5,
+          "passed": 9
+        },
+        "runtime_diagnoses": {
+          "context_exhaustion": 5,
+          "none": 9
+        },
+        "results_path": "agent_arena_results/qwen3_evk/20260716T222730Z__pydantic_hospital_logistics__qwen3_evk_w4a16_det_hospital_hard_2048__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "agent_arena_results/qwen3_evk/20260716T222730Z__pydantic_hospital_logistics__qwen3_evk_w4a16_det_hospital_hard_2048__stock__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "ministral_3b_host_bf16",
+      "model": "mistralai/Ministral-3-3B-Instruct-2512-BF16",
+      "parameters": "3.3B",
+      "location": "RTX 5090 host",
+      "compute": "GPU",
+      "precision_or_quantization": "BF16",
+      "runtime": "vLLM",
+      "tool_renderer_parser": "Mistral native tool parser",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.0
+      },
+      "validity": "valid",
+      "caveat": "",
+      "bfcl80": {
+        "correct": 66,
+        "total": 80,
+        "accuracy": 0.825,
+        "categories": {
+          "irrelevance": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 7,
+            "accuracy": 0.8571428571428571
+          },
+          "live_multiple": {
+            "correct": 5,
+            "total": 8,
+            "accuracy": 0.625
+          },
+          "live_parallel": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_parallel_multiple": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 6,
+            "total": 10,
+            "accuracy": 0.6
+          },
+          "multiple": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "parallel": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel_multiple": {
+            "correct": 5,
+            "total": 7,
+            "accuracy": 0.7142857142857143
+          },
+          "simple_python": {
+            "correct": 12,
+            "total": 12,
+            "accuracy": 1.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260628_ministral_vllm_holdout80/summary_host-speed-ministral-vllm-holdout80.json"
+      },
+      "bfcl90": {
+        "correct": 64,
+        "total": 90,
+        "accuracy": 0.7111111111111111,
+        "categories": {
+          "irrelevance": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_multiple": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444
+          },
+          "live_parallel": {
+            "correct": 2,
+            "total": 5,
+            "accuracy": 0.4
+          },
+          "live_parallel_multiple": {
+            "correct": 4,
+            "total": 5,
+            "accuracy": 0.8
+          },
+          "live_relevance": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_simple": {
+            "correct": 5,
+            "total": 11,
+            "accuracy": 0.45454545454545453
+          },
+          "multiple": {
+            "correct": 8,
+            "total": 9,
+            "accuracy": 0.8888888888888888
+          },
+          "parallel": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "parallel_multiple": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "simple_python": {
+            "correct": 10,
+            "total": 13,
+            "accuracy": 0.7692307692307693
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260628_ministral_vllm_fresh90/summary_host-speed-ministral-vllm-fresh90.json"
+      },
+      "bfcl_combined": {
+        "correct": 130,
+        "total": 170,
+        "accuracy": 0.7647058823529411
+      },
+      "hospital_hard_strict": {
+        "passed": 9,
+        "total": 14,
+        "strict_average": 0.642857,
+        "passed_cases": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_O2_escalate_with_many_options",
+          "hospital_O3_cold_chain_with_many_options",
+          "hospital_O4_elevator_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P3_cold_chain_from_action_options",
+          "hospital_P4_elevator_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [],
+        "failure_kinds": {
+          "agent_exception": 4,
+          "missing_required_tool": 1,
+          "passed": 9
+        },
+        "runtime_diagnoses": {
+          "agent_exception": 2,
+          "agent_request_limit": 2,
+          "none": 10
+        },
+        "results_path": "/home/eivho/agent_arena_results/20260628T215316Z__pydantic_hospital_logistics__host_ministral_vllm_hospital_hard_20260628__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "/home/eivho/agent_arena_results/20260628T215316Z__pydantic_hospital_logistics__host_ministral_vllm_hospital_hard_20260628__stock__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "ministral_3b_evk_q4_htp",
+      "model": "mistralai/Ministral-3-3B-Instruct-2512-BF16",
+      "parameters": "3.3B",
+      "location": "IQ9075 EVK",
+      "compute": "Hexagon HTP/NPU",
+      "precision_or_quantization": "custom Q4 QNN bundle",
+      "runtime": "Genie/QNN with QAIRT 2.47",
+      "tool_renderer_parser": "mistral_tool",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.0,
+        "top_k": 1,
+        "top_p": 1.0,
+        "seed": 42
+      },
+      "validity": "valid",
+      "caveat": "Exact BFCL80/BFCL90 and strict 14-case hospital runs complete; hospital result exactly matches host BF16.",
+      "bfcl80": {
+        "correct": 66,
+        "total": 80,
+        "accuracy": 0.825,
+        "categories": {
+          "irrelevance": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 7,
+            "accuracy": 0.8571428571428571
+          },
+          "live_multiple": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_parallel": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_parallel_multiple": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5
+          },
+          "live_relevance": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5
+          },
+          "live_simple": {
+            "correct": 6,
+            "total": 10,
+            "accuracy": 0.6
+          },
+          "multiple": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "parallel": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel_multiple": {
+            "correct": 5,
+            "total": 7,
+            "accuracy": 0.7142857142857143
+          },
+          "simple_python": {
+            "correct": 12,
+            "total": 12,
+            "accuracy": 1.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/holdout_signal80_nonweb_20260627_ministral_mistral_tool/summary_holdout-ministral-mistral-tool-nonweb.json"
+      },
+      "bfcl90": {
+        "correct": 66,
+        "total": 90,
+        "accuracy": 0.7333333333333333,
+        "categories": {
+          "irrelevance": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "live_irrelevance": {
+            "correct": 5,
+            "total": 8,
+            "accuracy": 0.625
+          },
+          "live_multiple": {
+            "correct": 5,
+            "total": 9,
+            "accuracy": 0.5555555555555556
+          },
+          "live_parallel": {
+            "correct": 2,
+            "total": 5,
+            "accuracy": 0.4
+          },
+          "live_parallel_multiple": {
+            "correct": 5,
+            "total": 5,
+            "accuracy": 1.0
+          },
+          "live_relevance": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_simple": {
+            "correct": 6,
+            "total": 11,
+            "accuracy": 0.5454545454545454
+          },
+          "multiple": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0
+          },
+          "parallel": {
+            "correct": 6,
+            "total": 9,
+            "accuracy": 0.6666666666666666
+          },
+          "parallel_multiple": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "simple_python": {
+            "correct": 10,
+            "total": 13,
+            "accuracy": 0.7692307692307693
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/fresh90_nonweb_20260628_ministral_mistral_tool/summary_fresh90-ministral-mistral-tool.json"
+      },
+      "bfcl_combined": {
+        "correct": 132,
+        "total": 170,
+        "accuracy": 0.7764705882352941
+      },
+      "hospital_hard_strict": {
+        "passed": 9,
+        "total": 14,
+        "strict_average": 0.642857,
+        "passed_cases": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_O2_escalate_with_many_options",
+          "hospital_O3_cold_chain_with_many_options",
+          "hospital_O4_elevator_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P3_cold_chain_from_action_options",
+          "hospital_P4_elevator_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [
+          "hospital_L2_cold_chain_robot_low",
+          "hospital_L3_replan_priority_medication"
+        ],
+        "failure_kinds": {
+          "agent_exception": 1,
+          "context_exhaustion": 2,
+          "missing_required_tool": 2,
+          "passed": 9
+        },
+        "runtime_diagnoses": {
+          "agent_exception": 1,
+          "context_exhaustion": 2,
+          "none": 11
+        },
+        "results_path": "agent_arena_results/ministral_evk/20260716T234020Z__pydantic_hospital_logistics__ministral_evk_q4_hospital_hard_2048_final_strict__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "agent_arena_results/ministral_evk/20260716T234020Z__pydantic_hospital_logistics__ministral_evk_q4_hospital_hard_2048_final_strict__stock__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "nemotron_nano_host_bf16",
+      "model": "nvidia/Llama-3.1-Nemotron-Nano-8B-v1",
+      "parameters": "8B",
+      "location": "RTX 5090 host",
+      "compute": "GPU",
+      "precision_or_quantization": "BF16",
+      "runtime": "Transformers OpenAI bridge",
+      "tool_renderer_parser": "NVIDIA/BFCL guarded native adapter",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.0
+      },
+      "validity": "valid",
+      "caveat": "",
+      "bfcl80": {
+        "correct": 59,
+        "total": 80,
+        "accuracy": 0.7375,
+        "categories": {
+          "irrelevance": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 7,
+            "accuracy": 0.8571428571428571
+          },
+          "live_multiple": {
+            "correct": 5,
+            "total": 8,
+            "accuracy": 0.625
+          },
+          "live_parallel": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5
+          },
+          "live_parallel_multiple": {
+            "correct": 1,
+            "total": 4,
+            "accuracy": 0.25
+          },
+          "live_relevance": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_simple": {
+            "correct": 8,
+            "total": 10,
+            "accuracy": 0.8
+          },
+          "multiple": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel_multiple": {
+            "correct": 3,
+            "total": 7,
+            "accuracy": 0.42857142857142855
+          },
+          "simple_python": {
+            "correct": 9,
+            "total": 12,
+            "accuracy": 0.75
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260628_nemotron_tf_holdout80/summary_host-speed-nemotron-tf-holdout80.json"
+      },
+      "bfcl90": {
+        "correct": 61,
+        "total": 90,
+        "accuracy": 0.6777777777777778,
+        "categories": {
+          "irrelevance": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_multiple": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444
+          },
+          "live_parallel": {
+            "correct": 2,
+            "total": 5,
+            "accuracy": 0.4
+          },
+          "live_parallel_multiple": {
+            "correct": 4,
+            "total": 5,
+            "accuracy": 0.8
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 3,
+            "total": 11,
+            "accuracy": 0.2727272727272727
+          },
+          "multiple": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0
+          },
+          "parallel": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "parallel_multiple": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "simple_python": {
+            "correct": 9,
+            "total": 13,
+            "accuracy": 0.6923076923076923
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260628_nemotron_tf_fresh90/summary_host-speed-nemotron-tf-fresh90.json"
+      },
+      "bfcl_combined": {
+        "correct": 120,
+        "total": 170,
+        "accuracy": 0.7058823529411765
+      },
+      "hospital_hard_strict": {
+        "passed": 6,
+        "total": 14,
+        "strict_average": 0.428571,
+        "passed_cases": [
+          "hospital_O3_cold_chain_with_many_options",
+          "hospital_O4_elevator_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P3_cold_chain_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [],
+        "failure_kinds": {
+          "agent_exception": 3,
+          "missing_required_tool": 2,
+          "passed": 6,
+          "protocol_error": 1,
+          "unsafe_or_forbidden_tool": 1,
+          "wrong_tool_arguments": 1
+        },
+        "runtime_diagnoses": {
+          "agent_exception": 1,
+          "agent_request_limit": 2,
+          "none": 11
+        },
+        "results_path": "/home/eivho/agent_arena_results/20260628T220231Z__pydantic_hospital_logistics__host_nemotron_tf_hospital_hard_20260628__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "/home/eivho/agent_arena_results/20260628T220231Z__pydantic_hospital_logistics__host_nemotron_tf_hospital_hard_20260628__stock__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "nemotron_nano_evk_w4a16_thinking_off",
+      "model": "nvidia/Llama-3.1-Nemotron-Nano-8B-v1",
+      "parameters": "8B",
+      "location": "IQ9075 EVK",
+      "compute": "Hexagon HTP/NPU",
+      "precision_or_quantization": "custom W4A16",
+      "runtime": "Genie/QNN",
+      "tool_renderer_parser": "nemotron_bfcl_official_strict_schema_enhanced_guarded",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.0,
+        "top_k": 1,
+        "top_p": 1.0,
+        "seed": 42
+      },
+      "validity": "valid",
+      "caveat": "Exact fixed BFCL and strict hospital suites complete with the guarded native/BFCL adapter.",
+      "bfcl80": {
+        "correct": 53,
+        "total": 80,
+        "accuracy": 0.6625,
+        "categories": {
+          "irrelevance": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 7,
+            "accuracy": 0.8571428571428571
+          },
+          "live_multiple": {
+            "correct": 2,
+            "total": 8,
+            "accuracy": 0.25
+          },
+          "live_parallel": {
+            "correct": 1,
+            "total": 4,
+            "accuracy": 0.25
+          },
+          "live_parallel_multiple": {
+            "correct": 1,
+            "total": 4,
+            "accuracy": 0.25
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 7,
+            "total": 10,
+            "accuracy": 0.7
+          },
+          "multiple": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "parallel": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel_multiple": {
+            "correct": 2,
+            "total": 7,
+            "accuracy": 0.2857142857142857
+          },
+          "simple_python": {
+            "correct": 8,
+            "total": 12,
+            "accuracy": 0.6666666666666666
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/holdout_signal80_nonweb_20260627_nemotron_guarded_v7/summary_holdout-nemotron-guarded-v7-nonweb.json"
+      },
+      "bfcl90": {
+        "correct": 45,
+        "total": 90,
+        "accuracy": 0.5,
+        "categories": {
+          "irrelevance": {
+            "correct": 1,
+            "total": 9,
+            "accuracy": 0.1111111111111111
+          },
+          "live_irrelevance": {
+            "correct": 3,
+            "total": 8,
+            "accuracy": 0.375
+          },
+          "live_multiple": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444
+          },
+          "live_parallel": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          },
+          "live_parallel_multiple": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 5,
+            "total": 11,
+            "accuracy": 0.45454545454545453
+          },
+          "multiple": {
+            "correct": 8,
+            "total": 9,
+            "accuracy": 0.8888888888888888
+          },
+          "parallel": {
+            "correct": 6,
+            "total": 9,
+            "accuracy": 0.6666666666666666
+          },
+          "parallel_multiple": {
+            "correct": 4,
+            "total": 8,
+            "accuracy": 0.5
+          },
+          "simple_python": {
+            "correct": 8,
+            "total": 13,
+            "accuracy": 0.6153846153846154
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/fresh90_nonweb_20260628_nemotron_guarded_v7/summary_fresh90-nemotron-guarded-v7.json"
+      },
+      "bfcl_combined": {
+        "correct": 98,
+        "total": 170,
+        "accuracy": 0.5764705882352941
+      },
+      "hospital_hard_strict": {
+        "passed": 5,
+        "total": 14,
+        "strict_average": 0.357143,
+        "passed_cases": [
+          "hospital_O3_cold_chain_with_many_options",
+          "hospital_O4_elevator_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P4_elevator_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_L1_sample_elevator_out",
+          "hospital_L2_cold_chain_robot_low",
+          "hospital_L4_blood_product_conflict_escalate"
+        ],
+        "failure_kinds": {
+          "agent_exception": 4,
+          "context_exhaustion": 4,
+          "passed": 5,
+          "wrong_tool_behavior": 1
+        },
+        "runtime_diagnoses": {
+          "agent_exception": 3,
+          "agent_request_limit": 1,
+          "context_exhaustion": 4,
+          "none": 6
+        },
+        "results_path": "agent_arena_results/nemotron_evk/20260717T002414Z__pydantic_hospital_logistics__nemotron_evk_w4a16_thinking_off_hospital_hard_2048_final_strict_rerun__thinking_off__openai-compatible/results.strict-final.json",
+        "raw_results_path": "agent_arena_results/nemotron_evk/20260717T002414Z__pydantic_hospital_logistics__nemotron_evk_w4a16_thinking_off_hospital_hard_2048_final_strict_rerun__thinking_off__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "nemotron_nano_evk_w4a16_thinking_on",
+      "model": "nvidia/Llama-3.1-Nemotron-Nano-8B-v1",
+      "parameters": "8B",
+      "location": "IQ9075 EVK",
+      "compute": "Hexagon HTP/NPU",
+      "precision_or_quantization": "custom W4A16",
+      "runtime": "Genie/QNN",
+      "tool_renderer_parser": "nemotron_bfcl_official_strict_schema_enhanced_guarded",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.6,
+        "top_k": 40,
+        "top_p": 0.95,
+        "seed": 42
+      },
+      "validity": "valid",
+      "caveat": "Exact fixed BFCL and strict hospital suites complete; reasoning-on scored below reasoning-off on both BFCL selections and hospital.",
+      "bfcl80": {
+        "correct": 47,
+        "total": 80,
+        "accuracy": 0.5875,
+        "category_breakdown": {
+          "irrelevance": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "live_irrelevance": {
+            "correct": 4,
+            "total": 7,
+            "accuracy": 0.5714285714285714
+          },
+          "live_multiple": {
+            "correct": 1,
+            "total": 8,
+            "accuracy": 0.125
+          },
+          "live_parallel": {
+            "correct": 1,
+            "total": 4,
+            "accuracy": 0.25
+          },
+          "live_parallel_multiple": {
+            "correct": 1,
+            "total": 4,
+            "accuracy": 0.25
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 5,
+            "total": 10,
+            "accuracy": 0.5
+          },
+          "multiple": {
+            "correct": 5,
+            "total": 8,
+            "accuracy": 0.625
+          },
+          "parallel": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel_multiple": {
+            "correct": 3,
+            "total": 7,
+            "accuracy": 0.42857142857142855
+          },
+          "simple_python": {
+            "correct": 8,
+            "total": 12,
+            "accuracy": 0.6666666666666666
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/nemotron_thinking_on_holdout80_final_v3_20260717/nemotron-thinking-on-holdout80-final-v3/summary_nemotron-thinking-on-holdout80-final-v3.json"
+      },
+      "bfcl90": {
+        "correct": 41,
+        "total": 90,
+        "accuracy": 0.45555555555555555,
+        "category_breakdown": {
+          "irrelevance": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0
+          },
+          "live_irrelevance": {
+            "correct": 3,
+            "total": 8,
+            "accuracy": 0.375
+          },
+          "live_multiple": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444
+          },
+          "live_parallel": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          },
+          "live_parallel_multiple": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 4,
+            "total": 11,
+            "accuracy": 0.36363636363636365
+          },
+          "multiple": {
+            "correct": 8,
+            "total": 9,
+            "accuracy": 0.8888888888888888
+          },
+          "parallel": {
+            "correct": 6,
+            "total": 9,
+            "accuracy": 0.6666666666666666
+          },
+          "parallel_multiple": {
+            "correct": 3,
+            "total": 8,
+            "accuracy": 0.375
+          },
+          "simple_python": {
+            "correct": 7,
+            "total": 13,
+            "accuracy": 0.5384615384615384
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/nemotron_thinking_on_fresh90_final_20260717/nemotron-thinking-on-fresh90-final/summary_nemotron-thinking-on-fresh90-final.json"
+      },
+      "bfcl_combined": {
+        "correct": 88,
+        "total": 170,
+        "accuracy": 0.5176470588235295
+      },
+      "hospital_hard_strict": {
+        "passed": 4,
+        "total": 14,
+        "strict_average": 0.285714,
+        "passed_cases": [
+          "hospital_O3_cold_chain_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P3_cold_chain_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_P4_elevator_from_action_options",
+          "hospital_L0_simple_linen_delivery",
+          "hospital_L2_cold_chain_robot_low"
+        ],
+        "failure_kinds": {
+          "agent_exception": 5,
+          "context_exhaustion": 4,
+          "passed": 4,
+          "wrong_tool_behavior": 1
+        },
+        "runtime_diagnoses": {
+          "agent_exception": 5,
+          "context_exhaustion": 4,
+          "none": 5
+        },
+        "results_path": "agent_arena_results/nemotron_evk/20260717T004419Z__pydantic_hospital_logistics__nemotron_evk_w4a16_thinking_on_hospital_hard_2048_final_strict__thinking_on__openai-compatible/results.strict-final.json",
+        "raw_results_path": "agent_arena_results/nemotron_evk/20260717T004419Z__pydantic_hospital_logistics__nemotron_evk_w4a16_thinking_on_hospital_hard_2048_final_strict__thinking_on__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "llama31_8b_host_bf16_llama3_json",
+      "model": "meta-llama/Llama-3.1-8B-Instruct",
+      "parameters": "8B",
+      "location": "RTX 5090 host",
+      "compute": "GPU",
+      "precision_or_quantization": "BF16",
+      "runtime": "vLLM",
+      "tool_renderer_parser": "llama3_json",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.0
+      },
+      "validity": "valid_parser_sensitive",
+      "caveat": "Valid calls, but materially worse than the EVK Qualcomm adapter.",
+      "bfcl80": {
+        "correct": 30,
+        "total": 80,
+        "accuracy": 0.375,
+        "categories": {
+          "irrelevance": {
+            "correct": 0,
+            "total": 8,
+            "accuracy": 0.0
+          },
+          "live_irrelevance": {
+            "correct": 0,
+            "total": 7,
+            "accuracy": 0.0
+          },
+          "live_multiple": {
+            "correct": 3,
+            "total": 8,
+            "accuracy": 0.375
+          },
+          "live_parallel": {
+            "correct": 1,
+            "total": 4,
+            "accuracy": 0.25
+          },
+          "live_parallel_multiple": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 3,
+            "total": 10,
+            "accuracy": 0.3
+          },
+          "multiple": {
+            "correct": 3,
+            "total": 8,
+            "accuracy": 0.375
+          },
+          "parallel": {
+            "correct": 5,
+            "total": 8,
+            "accuracy": 0.625
+          },
+          "parallel_multiple": {
+            "correct": 3,
+            "total": 7,
+            "accuracy": 0.42857142857142855
+          },
+          "simple_python": {
+            "correct": 6,
+            "total": 12,
+            "accuracy": 0.5
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260628_llama31_vllm_holdout80/summary_host-speed-llama31-vllm-holdout80.json"
+      },
+      "bfcl90": {
+        "correct": 22,
+        "total": 90,
+        "accuracy": 0.24444444444444444,
+        "categories": {
+          "irrelevance": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0
+          },
+          "live_irrelevance": {
+            "correct": 0,
+            "total": 8,
+            "accuracy": 0.0
+          },
+          "live_multiple": {
+            "correct": 2,
+            "total": 9,
+            "accuracy": 0.2222222222222222
+          },
+          "live_parallel": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          },
+          "live_parallel_multiple": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 0,
+            "total": 11,
+            "accuracy": 0.0
+          },
+          "multiple": {
+            "correct": 3,
+            "total": 9,
+            "accuracy": 0.3333333333333333
+          },
+          "parallel": {
+            "correct": 3,
+            "total": 9,
+            "accuracy": 0.3333333333333333
+          },
+          "parallel_multiple": {
+            "correct": 1,
+            "total": 8,
+            "accuracy": 0.125
+          },
+          "simple_python": {
+            "correct": 7,
+            "total": 13,
+            "accuracy": 0.5384615384615384
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260628_llama31_vllm_fresh90/summary_host-speed-llama31-vllm-fresh90.json"
+      },
+      "bfcl_combined": {
+        "correct": 52,
+        "total": 170,
+        "accuracy": 0.3058823529411765
+      },
+      "hospital_hard_strict": {
+        "passed": 8,
+        "total": 14,
+        "strict_average": 0.600765,
+        "passed_cases": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_O2_escalate_with_many_options",
+          "hospital_O3_cold_chain_with_many_options",
+          "hospital_O4_elevator_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P3_cold_chain_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [],
+        "failure_kinds": {
+          "agent_exception": 4,
+          "missing_required_tool": 1,
+          "passed": 8,
+          "unsafe_or_forbidden_tool": 1
+        },
+        "runtime_diagnoses": {
+          "agent_request_limit": 4,
+          "none": 10
+        },
+        "results_path": "/home/eivho/agent_arena_results/20260628T215806Z__pydantic_hospital_logistics__host_llama31_vllm_hospital_hard_20260628__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "/home/eivho/agent_arena_results/20260628T215806Z__pydantic_hospital_logistics__host_llama31_vllm_hospital_hard_20260628__stock__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "llama31_8b_evk_w4a16_qcom",
+      "model": "meta-llama/Llama-3.1-8B-Instruct",
+      "parameters": "8B",
+      "location": "IQ9075 EVK",
+      "compute": "Hexagon HTP/NPU",
+      "precision_or_quantization": "Qualcomm W4A16",
+      "runtime": "Genie/QNN",
+      "tool_renderer_parser": "qcom_tool",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.0,
+        "top_k": 1,
+        "top_p": 1.0,
+        "seed": 42
+      },
+      "validity": "valid",
+      "caveat": "Exact fixed suites complete with the Qualcomm response-segment parser; six hospital cases context-exhausted after model-loop overcalling, with no device failure.",
+      "bfcl80": {
+        "correct": 55,
+        "total": 80,
+        "accuracy": 0.6875,
+        "categories": {
+          "irrelevance": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "live_irrelevance": {
+            "correct": 4,
+            "total": 7,
+            "accuracy": 0.5714285714285714
+          },
+          "live_multiple": {
+            "correct": 3,
+            "total": 8,
+            "accuracy": 0.375
+          },
+          "live_parallel": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5
+          },
+          "live_parallel_multiple": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5
+          },
+          "live_relevance": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_simple": {
+            "correct": 8,
+            "total": 10,
+            "accuracy": 0.8
+          },
+          "multiple": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "parallel": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "parallel_multiple": {
+            "correct": 3,
+            "total": 7,
+            "accuracy": 0.42857142857142855
+          },
+          "simple_python": {
+            "correct": 10,
+            "total": 12,
+            "accuracy": 0.8333333333333334
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/holdout_signal80_nonweb_20260627_stock_llama_qcom/summary_holdout-stock-llama-qcom-nonweb.json"
+      },
+      "bfcl90": {
+        "correct": 53,
+        "total": 90,
+        "accuracy": 0.5888888888888889,
+        "categories": {
+          "irrelevance": {
+            "correct": 1,
+            "total": 9,
+            "accuracy": 0.1111111111111111
+          },
+          "live_irrelevance": {
+            "correct": 4,
+            "total": 8,
+            "accuracy": 0.5
+          },
+          "live_multiple": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444
+          },
+          "live_parallel": {
+            "correct": 2,
+            "total": 5,
+            "accuracy": 0.4
+          },
+          "live_parallel_multiple": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 5,
+            "total": 11,
+            "accuracy": 0.45454545454545453
+          },
+          "multiple": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0
+          },
+          "parallel": {
+            "correct": 7,
+            "total": 9,
+            "accuracy": 0.7777777777777778
+          },
+          "parallel_multiple": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "simple_python": {
+            "correct": 9,
+            "total": 13,
+            "accuracy": 0.6923076923076923
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/fresh90_nonweb_20260628_stock_llama_qcom_guarded/summary_fresh90-stock-llama-qcom-guarded.json"
+      },
+      "bfcl_combined": {
+        "correct": 108,
+        "total": 170,
+        "accuracy": 0.6352941176470588
+      },
+      "hospital_hard_strict": {
+        "passed": 4,
+        "total": 14,
+        "strict_average": 0.285714,
+        "passed_cases": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [
+          "hospital_P4_elevator_from_action_options",
+          "hospital_L0_simple_linen_delivery",
+          "hospital_L1_sample_elevator_out",
+          "hospital_L2_cold_chain_robot_low",
+          "hospital_L3_replan_priority_medication",
+          "hospital_L4_blood_product_conflict_escalate"
+        ],
+        "failure_kinds": {
+          "agent_exception": 2,
+          "context_exhaustion": 6,
+          "passed": 4,
+          "wrong_tool_behavior": 2
+        },
+        "runtime_diagnoses": {
+          "agent_request_limit": 2,
+          "context_exhaustion": 6,
+          "none": 6
+        },
+        "results_path": "agent_arena_results/stock_llama_evk/20260716T225925Z__pydantic_hospital_logistics__stock_llama_evk_w4a16_qcom_segment_hospital_hard_2048__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "agent_arena_results/stock_llama_evk/20260716T225925Z__pydantic_hospital_logistics__stock_llama_evk_w4a16_qcom_segment_hospital_hard_2048__stock__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "mistral7b_v03_host_bf16",
+      "model": "mistralai/Mistral-7B-Instruct-v0.3",
+      "parameters": "7B",
+      "location": "RTX 5090 host",
+      "compute": "GPU",
+      "precision_or_quantization": "BF16",
+      "runtime": "vLLM",
+      "tool_renderer_parser": "Mistral native parser",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.0
+      },
+      "validity": "valid",
+      "caveat": "Host-only; available accelerator context targets Hexagon v79, not IQ9075 v73.",
+      "bfcl80": {
+        "correct": 49,
+        "total": 80,
+        "accuracy": 0.6125,
+        "categories": {
+          "irrelevance": {
+            "correct": 7,
+            "total": 8,
+            "accuracy": 0.875
+          },
+          "live_irrelevance": {
+            "correct": 5,
+            "total": 7,
+            "accuracy": 0.7142857142857143
+          },
+          "live_multiple": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_parallel": {
+            "correct": 1,
+            "total": 4,
+            "accuracy": 0.25
+          },
+          "live_parallel_multiple": {
+            "correct": 2,
+            "total": 4,
+            "accuracy": 0.5
+          },
+          "live_relevance": {
+            "correct": 1,
+            "total": 4,
+            "accuracy": 0.25
+          },
+          "live_simple": {
+            "correct": 7,
+            "total": 10,
+            "accuracy": 0.7
+          },
+          "multiple": {
+            "correct": 5,
+            "total": 8,
+            "accuracy": 0.625
+          },
+          "parallel": {
+            "correct": 0,
+            "total": 8,
+            "accuracy": 0.0
+          },
+          "parallel_multiple": {
+            "correct": 4,
+            "total": 7,
+            "accuracy": 0.5714285714285714
+          },
+          "simple_python": {
+            "correct": 11,
+            "total": 12,
+            "accuracy": 0.9166666666666666
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260629_mistral7b_v03_qcaihub_holdout80/summary_host-speed-mistral7b-v03-qcaihub-holdout80.json"
+      },
+      "bfcl90": {
+        "correct": 44,
+        "total": 90,
+        "accuracy": 0.4888888888888889,
+        "categories": {
+          "irrelevance": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444
+          },
+          "live_irrelevance": {
+            "correct": 6,
+            "total": 8,
+            "accuracy": 0.75
+          },
+          "live_multiple": {
+            "correct": 2,
+            "total": 9,
+            "accuracy": 0.2222222222222222
+          },
+          "live_parallel": {
+            "correct": 0,
+            "total": 5,
+            "accuracy": 0.0
+          },
+          "live_parallel_multiple": {
+            "correct": 1,
+            "total": 5,
+            "accuracy": 0.2
+          },
+          "live_relevance": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_simple": {
+            "correct": 5,
+            "total": 11,
+            "accuracy": 0.45454545454545453
+          },
+          "multiple": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0
+          },
+          "parallel": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0
+          },
+          "parallel_multiple": {
+            "correct": 3,
+            "total": 8,
+            "accuracy": 0.375
+          },
+          "simple_python": {
+            "correct": 11,
+            "total": 13,
+            "accuracy": 0.8461538461538461
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260629_mistral7b_v03_qcaihub_fresh90/summary_host-speed-mistral7b-v03-qcaihub-fresh90.json"
+      },
+      "bfcl_combined": {
+        "correct": 93,
+        "total": 170,
+        "accuracy": 0.5470588235294118
+      },
+      "hospital_hard_strict": {
+        "passed": 8,
+        "total": 14,
+        "strict_average": 0.571429,
+        "passed_cases": [
+          "hospital_O1_assign_with_many_options",
+          "hospital_O2_escalate_with_many_options",
+          "hospital_O3_cold_chain_with_many_options",
+          "hospital_O5_read_only_with_many_options",
+          "hospital_P1_assign_from_action_options",
+          "hospital_P2_escalate_from_action_options",
+          "hospital_P3_cold_chain_from_action_options",
+          "hospital_P4_elevator_from_action_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [],
+        "failure_kinds": {
+          "missing_required_tool": 6,
+          "passed": 8
+        },
+        "runtime_diagnoses": {
+          "none": 14
+        },
+        "results_path": "/home/eivho/agent_arena_results/20260628T222128Z__pydantic_hospital_logistics__host_mistral7b_v03_qcaihub_hospital_hard_20260629__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "/home/eivho/agent_arena_results/20260628T222128Z__pydantic_hospital_logistics__host_mistral7b_v03_qcaihub_hospital_hard_20260629__stock__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "qwen2_7b_host_bf16_incomplete_adapter",
+      "model": "Qwen/Qwen2-7B-Instruct",
+      "parameters": "7B",
+      "location": "RTX 5090 host",
+      "compute": "GPU",
+      "precision_or_quantization": "BF16",
+      "runtime": "vLLM",
+      "tool_renderer_parser": "Hermes probe",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.0
+      },
+      "validity": "adapter_invalid",
+      "caveat": "Tool calls were not surfaced; scores are transport diagnostics, not model capability.",
+      "bfcl80": {
+        "correct": 15,
+        "total": 80,
+        "accuracy": 0.1875,
+        "categories": {
+          "irrelevance": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "live_irrelevance": {
+            "correct": 7,
+            "total": 7,
+            "accuracy": 1.0
+          },
+          "live_multiple": {
+            "correct": 0,
+            "total": 8,
+            "accuracy": 0.0
+          },
+          "live_parallel": {
+            "correct": 0,
+            "total": 4,
+            "accuracy": 0.0
+          },
+          "live_parallel_multiple": {
+            "correct": 0,
+            "total": 4,
+            "accuracy": 0.0
+          },
+          "live_relevance": {
+            "correct": 0,
+            "total": 4,
+            "accuracy": 0.0
+          },
+          "live_simple": {
+            "correct": 0,
+            "total": 10,
+            "accuracy": 0.0
+          },
+          "multiple": {
+            "correct": 0,
+            "total": 8,
+            "accuracy": 0.0
+          },
+          "parallel": {
+            "correct": 0,
+            "total": 8,
+            "accuracy": 0.0
+          },
+          "parallel_multiple": {
+            "correct": 0,
+            "total": 7,
+            "accuracy": 0.0
+          },
+          "simple_python": {
+            "correct": 0,
+            "total": 12,
+            "accuracy": 0.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260629_qwen2_7b_qcaihub_holdout80/summary_host-qwen2-7b-qcaihub.json"
+      },
+      "bfcl90": {
+        "correct": 17,
+        "total": 90,
+        "accuracy": 0.18888888888888888,
+        "categories": {
+          "irrelevance": {
+            "correct": 9,
+            "total": 9,
+            "accuracy": 1.0
+          },
+          "live_irrelevance": {
+            "correct": 8,
+            "total": 8,
+            "accuracy": 1.0
+          },
+          "live_multiple": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0
+          },
+          "live_parallel": {
+            "correct": 0,
+            "total": 5,
+            "accuracy": 0.0
+          },
+          "live_parallel_multiple": {
+            "correct": 0,
+            "total": 5,
+            "accuracy": 0.0
+          },
+          "live_relevance": {
+            "correct": 0,
+            "total": 4,
+            "accuracy": 0.0
+          },
+          "live_simple": {
+            "correct": 0,
+            "total": 11,
+            "accuracy": 0.0
+          },
+          "multiple": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0
+          },
+          "parallel": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0
+          },
+          "parallel_multiple": {
+            "correct": 0,
+            "total": 8,
+            "accuracy": 0.0
+          },
+          "simple_python": {
+            "correct": 0,
+            "total": 13,
+            "accuracy": 0.0
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260629_qwen2_7b_qcaihub_fresh90/summary_host-qwen2-7b-qcaihub.json"
+      },
+      "bfcl_combined": {
+        "correct": 32,
+        "total": 170,
+        "accuracy": 0.18823529411764706
+      },
+      "hospital_hard_strict": {
+        "passed": 0,
+        "total": 14,
+        "strict_average": 0.0,
+        "passed_cases": [],
+        "infrastructure_failures": [],
+        "context_exhaustions": [],
+        "failure_kinds": {
+          "missing_required_tool": 14
+        },
+        "runtime_diagnoses": {
+          "none": 14
+        },
+        "results_path": "/home/eivho/agent_arena_results/20260628T224419Z__pydantic_hospital_logistics__host_qwen2_7b_qcaihub_hospital_hard_20260629__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "/home/eivho/agent_arena_results/20260628T224419Z__pydantic_hospital_logistics__host_qwen2_7b_qcaihub_hospital_hard_20260629__stock__openai-compatible/results.json"
+      }
+    },
+    {
+      "deployment_id": "llama32_3b_host_bf16",
+      "model": "meta-llama/Llama-3.2-3B-Instruct",
+      "parameters": "3B",
+      "location": "RTX 5090 host",
+      "compute": "GPU",
+      "precision_or_quantization": "BF16",
+      "runtime": "vLLM",
+      "tool_renderer_parser": "Llama tool path",
+      "context_tokens": 4096,
+      "effective_sampling": {
+        "temperature": 0.0
+      },
+      "validity": "valid",
+      "caveat": "",
+      "bfcl80": {
+        "correct": 25,
+        "total": 80,
+        "accuracy": 0.3125,
+        "categories": {
+          "irrelevance": {
+            "correct": 0,
+            "total": 8,
+            "accuracy": 0.0
+          },
+          "live_irrelevance": {
+            "correct": 0,
+            "total": 7,
+            "accuracy": 0.0
+          },
+          "live_multiple": {
+            "correct": 3,
+            "total": 8,
+            "accuracy": 0.375
+          },
+          "live_parallel": {
+            "correct": 0,
+            "total": 4,
+            "accuracy": 0.0
+          },
+          "live_parallel_multiple": {
+            "correct": 1,
+            "total": 4,
+            "accuracy": 0.25
+          },
+          "live_relevance": {
+            "correct": 4,
+            "total": 4,
+            "accuracy": 1.0
+          },
+          "live_simple": {
+            "correct": 3,
+            "total": 10,
+            "accuracy": 0.3
+          },
+          "multiple": {
+            "correct": 4,
+            "total": 8,
+            "accuracy": 0.5
+          },
+          "parallel": {
+            "correct": 3,
+            "total": 8,
+            "accuracy": 0.375
+          },
+          "parallel_multiple": {
+            "correct": 2,
+            "total": 7,
+            "accuracy": 0.2857142857142857
+          },
+          "simple_python": {
+            "correct": 5,
+            "total": 12,
+            "accuracy": 0.4166666666666667
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260629_llama32_3b_qcaihub_holdout80/summary_host-llama32-3b-qcaihub.json"
+      },
+      "bfcl90": {
+        "correct": 26,
+        "total": 90,
+        "accuracy": 0.28888888888888886,
+        "categories": {
+          "irrelevance": {
+            "correct": 0,
+            "total": 9,
+            "accuracy": 0.0
+          },
+          "live_irrelevance": {
+            "correct": 3,
+            "total": 8,
+            "accuracy": 0.375
+          },
+          "live_multiple": {
+            "correct": 1,
+            "total": 9,
+            "accuracy": 0.1111111111111111
+          },
+          "live_parallel": {
+            "correct": 2,
+            "total": 5,
+            "accuracy": 0.4
+          },
+          "live_parallel_multiple": {
+            "correct": 0,
+            "total": 5,
+            "accuracy": 0.0
+          },
+          "live_relevance": {
+            "correct": 3,
+            "total": 4,
+            "accuracy": 0.75
+          },
+          "live_simple": {
+            "correct": 1,
+            "total": 11,
+            "accuracy": 0.09090909090909091
+          },
+          "multiple": {
+            "correct": 4,
+            "total": 9,
+            "accuracy": 0.4444444444444444
+          },
+          "parallel": {
+            "correct": 3,
+            "total": 9,
+            "accuracy": 0.3333333333333333
+          },
+          "parallel_multiple": {
+            "correct": 2,
+            "total": 8,
+            "accuracy": 0.25
+          },
+          "simple_python": {
+            "correct": 7,
+            "total": 13,
+            "accuracy": 0.5384615384615384
+          }
+        },
+        "summary_path": "agent_arena_results/bfcl_v4_100/host_speed_20260629_llama32_3b_qcaihub_fresh90/summary_host-llama32-3b-qcaihub.json"
+      },
+      "bfcl_combined": {
+        "correct": 51,
+        "total": 170,
+        "accuracy": 0.3
+      },
+      "hospital_hard_strict": {
+        "passed": 1,
+        "total": 14,
+        "strict_average": 0.071429,
+        "passed_cases": [
+          "hospital_O1_assign_with_many_options"
+        ],
+        "infrastructure_failures": [],
+        "context_exhaustions": [],
+        "failure_kinds": {
+          "agent_exception": 9,
+          "passed": 1,
+          "unsafe_or_forbidden_tool": 3,
+          "wrong_tool_behavior": 1
+        },
+        "runtime_diagnoses": {
+          "agent_request_limit": 9,
+          "none": 5
+        },
+        "results_path": "/home/eivho/agent_arena_results/20260629T071221Z__pydantic_hospital_logistics__host_llama32_3b_qcaihub_hospital_hard_20260629__stock__openai-compatible/results.strict-final.json",
+        "raw_results_path": "/home/eivho/agent_arena_results/20260629T071221Z__pydantic_hospital_logistics__host_llama32_3b_qcaihub_hospital_hard_20260629__stock__openai-compatible/results.json"
+      }
+    }
+  ]
+}

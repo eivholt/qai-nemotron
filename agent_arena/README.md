@@ -320,3 +320,43 @@ TOOL_REPAIR_RETRIES=1 \
 TOOL_VALIDATOR_RETRIES=1 \
 bash agent_arena/run_evk_agent_arenas.sh
 ```
+
+## Hospital Logistics Coordinator Demo
+
+`agent_arena/pydantic_hospital_logistics_arena.py` implements a hospital internal-logistics edge-agent demo. The agent does not drive robots directly; it coordinates jobs, checks constraints, assigns porters or robots, reserves elevators, updates status, notifies wards, and escalates conflicts.
+
+The mock tool surface is:
+
+- `get_pending_jobs`
+- `get_asset_location`
+- `check_elevator_status`
+- `reserve_elevator`
+- `assign_porter`
+- `assign_robot`
+- `check_cold_chain_window`
+- `notify_ward`
+- `escalate_to_human`
+- `update_job_status`
+- `query_policy`
+
+The scenario suite covers blood/lab samples, medication totes, cold-chain checks, elevator outages, low robot battery, priority preemption, ward notification, and human escalation. The demo is designed to show why edge hosting is useful in a hospital: operational context stays local, latency is predictable, and the coordinator can keep functioning during cloud/network outages.
+
+List scenarios:
+
+```bash
+.venv-qai/bin/python -m agent_arena.pydantic_hospital_logistics_arena --list-cases
+```
+
+Run against the current Nemotron EVK endpoint:
+
+```bash
+BASE_URL=http://192.168.1.158:8020/v1 MODEL_NAME=nemotron MODEL_LABEL=nemotron_hospital MODE=thinking_off bash agent_arena/run_host_pydantic_hospital_probe.sh
+```
+
+Run the same demo against stock Llama or Ministral:
+
+```bash
+BASE_URL=http://192.168.1.158:8012/v1 MODEL_NAME=stock-llama MODEL_LABEL=stock_llama_hospital MODE=stock bash agent_arena/run_host_pydantic_hospital_probe.sh
+
+BASE_URL=http://192.168.1.158:8013/v1 MODEL_NAME=ministral-q4 MODEL_LABEL=ministral_hospital MODE=stock bash agent_arena/run_host_pydantic_hospital_probe.sh
+```
