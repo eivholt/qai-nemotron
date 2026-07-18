@@ -5,7 +5,7 @@ engines on the Qualcomm Dragonwing IQ9075. It is a companion to
 [Deploy Nemotron Nano on Dragonwing IQ9075](https://dragonwingdocs.qualcomm.com/tutorials/deploy-nemotron-nano-on-dragonwing-iq9075),
 which explains the complete workstation setup, W4A16 quantization, QAI Hub
 compilation, transfer, and Genie validation process.
-I do not repeat those setup steps here. The focus is what happens after a model
+Those setup steps are not repeated here. The focus is what happens after a model
 can answer a prompt: can it reliably choose tools, supply valid arguments, use
 results over several turns, and stop without taking unnecessary actions?
 
@@ -15,9 +15,10 @@ output parser, inference runtime, and client loop. A smaller model behind its
 native tool protocol can outperform a larger model behind a plausible but
 incorrect protocol.
 
-## What I tested
+## Test setup
 
-I used two complementary benchmark families. They intentionally test tool use,
+The evaluation uses two complementary benchmark families. They intentionally test
+tool use,
 not factual knowledge.
 
 ### BFCL V4 function calling
@@ -30,7 +31,7 @@ functions, multiple and parallel calls, live-schema cases, relevance, and
 irrelevance. Irrelevance matters because a useful agent must decline to call a
 tool when none can satisfy the request.
 
-I run the official BFCL V4 deterministic scorer through
+The official BFCL V4 deterministic scorer runs through
 `agent_arena/bfcl_v4_subset_runner.py`. These are partial local evaluations,
 not official leaderboard submissions. Web-search agent tests are excluded and
 no network requests are executed.
@@ -68,6 +69,10 @@ the model. System failures are rerun and do not count as model mistakes.
 
 ## Models and execution paths
 
+*In the model inventory, italics identify checkpoints with Desktop results only;
+plain names also completed on IQ9075. In the result tables, italics identify
+Desktop runs.*
+
 | Model | Size | Best path tested on IQ9075 | Desktop reference |
 |---|---:|---|---|
 | [NVIDIA Llama-3.1-Nemotron-Nano-8B-v1](https://huggingface.co/nvidia/Llama-3.1-Nemotron-Nano-8B-v1) | 8B | Custom W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
@@ -82,7 +87,6 @@ the model. System failures are rerun and do not count as model mistakes.
 | *[Mistral-7B-Instruct-v0.3](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3)* | 7B | Public binary targets incompatible v79 DSP | BF16, RTX 5090 |
 | *[Meta Llama 3.2 3B Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct) and [Qwen2 7B Instruct](https://huggingface.co/Qwen/Qwen2-7B-Instruct)* | 3B/7B | Diagnostic Desktop runs only | BF16, RTX 5090 |
 
-*Italic model names were run only on the Desktop; they did not complete an IQ9075 inference run.*
 
 "Screened" does not mean a model is unusable. It means its Desktop result did not
 justify another costly IQ9075 export in this project, or its license/runtime fit
@@ -97,8 +101,8 @@ flowchart LR
     B -->|No current lowering| F[GGUF]
     F --> G[llama.cpp]
     G --> H[EVK CPU fallback]
-    A --> I[Desktop BF16 reference]
-    I --> J[RTX 5090]
+    A --> R[Desktop BF16 reference]
+    R --> J[RTX 5090]
 ```
 
 ## BFCL results
@@ -109,15 +113,15 @@ native adapter; the semantic task and official scorer remain unchanged.
 
 | Model and runtime | BFCL80 | BFCL90 | Combined |
 |---|---:|---:|---:|
-| Ornith 9B BF16, RTX 5090 | 71/80 | 78/90 | **149/170 (87.6%)** |
-| ToolACE 2.5 BF16, RTX 5090, Llama JSON | 74/80 | 72/90 | **146/170 (85.9%)** |
+| *Ornith 9B BF16, RTX 5090* | 71/80 | 78/90 | **149/170 (87.6%)** |
+| *ToolACE 2.5 BF16, RTX 5090, Llama JSON* | 74/80 | 72/90 | **146/170 (85.9%)** |
 | Ornith 9B Q4_K_M, IQ9075 CPU | 69/80 | 76/90 | **145/170 (85.3%)** |
-| Qwen3 4B BF16, RTX 5090 | 70/80 | 70/90 | **140/170 (82.4%)** |
-| Ministral 8B Instruct BF16, RTX 5090 | 69/80 | 69/90 | **138/170 (81.2%)** |
+| *Qwen3 4B BF16, RTX 5090* | 70/80 | 70/90 | **140/170 (82.4%)** |
+| *Ministral 8B Instruct BF16, RTX 5090* | 69/80 | 69/90 | **138/170 (81.2%)** |
 | Ministral 3B Q4, IQ9075 HTP | 66/80 | 66/90 | **132/170 (77.6%)** |
-| Ministral 3B BF16, RTX 5090 | 66/80 | 64/90 | **130/170 (76.5%)** |
+| *Ministral 3B BF16, RTX 5090* | 66/80 | 64/90 | **130/170 (76.5%)** |
 | Ministral 8B Q3, IQ9075 HTP | 67/80 | 61/90 | **128/170 (75.3%)** |
-| Nemotron Nano BF16, RTX 5090 | 59/80 | 61/90 | **120/170 (70.6%)** |
+| *Nemotron Nano BF16, RTX 5090* | 59/80 | 61/90 | **120/170 (70.6%)** |
 | Qwen3 4B W4A16 deterministic, IQ9075 HTP | 58/80 | 58/90 | **116/170 (68.2%)** |
 | Stock Llama 3.1 W4A16, IQ9075 HTP | 55/80 | 53/90 | **108/170 (63.5%)** |
 | ToolACE 2.5 W4A16 Pythonic, IQ9075 HTP | 56/80 | 52/90 | **108/170 (63.5%)** |
@@ -125,8 +129,8 @@ native adapter; the semantic task and official scorer remain unchanged.
 | Nemotron W4A16 thinking on, IQ9075 HTP | 47/80 | 41/90 | **88/170 (51.8%)** |
 
 [Mermaid's horizontal XY orientation](https://mermaid.js.org/syntax/xyChart.html)
-places model names on the vertical axis, leaving room for descriptive labels. I
-still separate Desktop references from IQ9075 results so execution paths remain
+places model names on the vertical axis, leaving room for descriptive labels. The
+charts separate Desktop references from IQ9075 results so execution paths remain
 visually distinct.
 
 ```mermaid
@@ -150,8 +154,8 @@ row includes five requests that reached the 300-second hard timeout. All five
 are recorded as non-passing calls, even in BFCL irrelevance categories where a
 genuine decision not to call a function can be correct.
 
-The result that changed my model-selection assumptions was Ministral 3B. It is
-smaller than the 8B models, yet its native Mistral tool protocol is disciplined
+Ministral 3B challenges simple model-selection assumptions. It is smaller than
+the 8B models, yet its native Mistral tool protocol is disciplined
 and stable across Desktop BF16 and Q4 HTP deployment. Parameter count alone is a
 poor predictor of agentic reliability.
 
@@ -182,17 +186,17 @@ useful for diagnosing near misses, but strict pass is the operational result.
 
 | Model and runtime | Strict pass | Average |
 |---|---:|---:|
-| ToolACE 2.5 BF16, native Pythonic | 10/14 | 0.789 |
-| Qwen3 4B BF16 | 9/14 | 0.779 |
+| *ToolACE 2.5 BF16, native Pythonic* | 10/14 | 0.789 |
+| *Qwen3 4B BF16* | 9/14 | 0.779 |
 | *xLAM 2 8B BF16* | 9/14 | 0.767 |
-| Ministral 3B BF16 | 9/14 | 0.643 |
+| *Ministral 3B BF16* | 9/14 | 0.643 |
 | Ornith 9B Q4_K_M, IQ9075 CPU | 9/14 | 0.796 |
 | Ministral 3B Q4, IQ9075 HTP | 9/14 | 0.643 |
 | Qwen3 4B W4A16 deterministic, IQ9075 HTP | 9/14 | 0.643 |
-| Ministral 8B BF16, RTX 5090 | 8/14 | 0.655 |
-| Llama 3.1 8B BF16 | 8/14 | 0.601 |
+| *Ministral 8B BF16, RTX 5090* | 8/14 | 0.655 |
+| *Llama 3.1 8B BF16* | 8/14 | 0.601 |
 | Ministral 8B Q3, IQ9075 HTP | 8/14 | 0.571 |
-| Nemotron Nano BF16 | 6/14 | 0.429 |
+| *Nemotron Nano BF16* | 6/14 | 0.429 |
 | ToolACE 2.5 W4A16, IQ9075 HTP | 6/14 | 0.429 |
 | Nemotron W4A16 thinking off, IQ9075 HTP | 5/14 | 0.357 |
 | Stock Llama W4A16, IQ9075 HTP | 4/14 | 0.286 |
@@ -205,8 +209,8 @@ two controlled 300-second generation timeouts in L2; neither is a QNN failure.
 
 One shared-suite caveat is that the long workflows also expose simplified
 `*_pending_*` convenience tools intended for bounded cases. Q3 selected those
-wrappers in L0 and L4. I retain the strict failures for comparability and do not
-alias the calls. A future revision should hide the convenience tools and rerun
+wrappers in L0 and L4. The strict failures remain for comparability; the calls are
+not aliased. A future revision should hide the convenience tools and rerun
 every model rather than repair one model's row.
 
 No local model reliably completed all five long workflows. The practical design
@@ -283,8 +287,8 @@ left at the generated zero value.
 
 ### A Q3 package fits, with a performance tradeoff
 
-QAIRT 2.47 documents HTP quantizer support for Q3_K GGUF tensors. I therefore
-used the same 8B checkpoint in [Q3_K_M form](https://huggingface.co/bartowski/mistralai_Ministral-3-8B-Instruct-2512-GGUF).
+QAIRT 2.47 documents HTP quantizer support for Q3_K GGUF tensors. The same
+8B checkpoint was therefore used in [Q3_K_M form](https://huggingface.co/bartowski/mistralai_Ministral-3-8B-Instruct-2512-GGUF).
 This is a more aggressive
 quantization, not a smaller parameter-count model. The 4.0 GiB source produced
 a 6.1 GiB, nine-context HTP package. It loaded all contexts with the side-by-side
@@ -328,10 +332,10 @@ must validate the model's template and EOS behavior before blaming hardware.
 
 ### Keep compiler and runtime versions together
 
-I installed QAIRT 2.47 alongside the existing device runtime at
-`/home/ubuntu/qairt-2.47.0.260601` and selected it per model through `PATH`,
-`LD_LIBRARY_PATH`, and `ADSP_LIBRARY_PATH`. I did not repoint
-`/opt/qairt/current`, because doing so would silently change the runtime used by
+QAIRT 2.47 was installed alongside the existing device runtime at
+`/home/ubuntu/qairt-2.47.0.260601` and selected per model through `PATH`,
+`LD_LIBRARY_PATH`, and `ADSP_LIBRARY_PATH`. The `/opt/qairt/current` symlink was
+not repointed, because doing so would silently change the runtime used by
 every already-validated model. A system-wide update is possible, but should be
 followed by regression tests for all existing bundles.
 
@@ -345,8 +349,7 @@ an opaque `Failed to create the dialog` into an actionable deployment result.
 
 These figures are deliberately labeled. **Measured** values came from logs,
 Genie profiles, process monitoring, or GNU `time`. **Approximate** values are
-rounded observations. **Unrecorded** means I did not reconstruct a number after
-the fact.
+rounded observations. **Unrecorded** means no reliable measurement was captured.
 
 The workstation used an RTX 5090 with 32 GB VRAM and 192 GB system RAM. WSL2 was
 configured for 176 GB RAM and 96 GB swap. GPU inference generally fit in VRAM;
