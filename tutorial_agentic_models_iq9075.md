@@ -40,7 +40,9 @@ no network requests are executed.
 - BFCL90: `agent_arena/benchmark_selections/bfcl_v4_fresh90_nonweb_20260628.json`
 
 The two non-overlapping selections reduce the risk of tuning an adapter to a
-familiar list.
+familiar list. Known cases that exceeded the supported Genie context during
+selection development were excluded for every model before both lists were
+frozen; see [Uniform context-excess exclusions](#uniform-context-excess-exclusions).
 
 ```mermaid
 pie showData
@@ -65,7 +67,9 @@ chooses between a few actions, and five longer tasks (`L0`-`L4`) that require
 several tool calls. Fixed rules check each run automatically; no LLM grades the
 answers. Missing or wrong calls, repeated or unnecessary actions, forbidden
 tools, calls that never execute, and steps in the wrong order all count against
-the model. System failures are rerun and do not count as model mistakes.
+the model. System failures are rerun and do not count as model mistakes. The
+[strict rescoring notes](#strict-rescoring-and-tool-call-policy) explain how
+rejected retries and excess calls are retained.
 
 ## Models and execution paths
 
@@ -90,7 +94,10 @@ Desktop runs.*
 
 "Screened" does not mean a model is unusable. It means its Desktop result did not
 justify another costly IQ9075 export in this project, or its license/runtime fit
-was less attractive than the selected candidates.
+was less attractive than the selected candidates. Model-specific deployment
+notes cover the [Ornith NPU blocker](#ornith-npu-blocker-and-cpu-fallback),
+[Mistral 7B binary mismatch](#mistral-7b-public-binary-mismatch), and
+[Qwen3 export environment](#qwen3-export-environment).
 
 ```mermaid
 flowchart LR
@@ -109,7 +116,11 @@ flowchart LR
 
 The table uses the same 170 cases for every row. `Combined` is a convenience
 total, not an official BFCL leaderboard metric. Each model uses its best honest
-native adapter; the semantic task and official scorer remain unchanged.
+native adapter; the semantic task and official scorer remain unchanged. Genie
+rows use settings from the deployed bundle rather than OpenAI request fields;
+see [Inference controls and sampler authority](#inference-controls-and-sampler-authority).
+Desktop-to-device differences are deployment-path deltas, not isolated
+quantization penalties; see [What the BF16-versus-device delta does not prove](#what-the-bf16-versus-device-delta-does-not-prove).
 
 | Model and runtime | BFCL80 | BFCL90 | Combined |
 |---|---:|---:|---:|
@@ -246,7 +257,8 @@ The OpenAI/Pydantic client format and the model's internal text format are not
 the same thing. The adapter translates OpenAI tool schemas into the model-native
 prompt and translates native output back into OpenAI `tool_calls`. MCP discovery
 can supply the same schemas, but MCP does not remove the need for a correct
-model-specific renderer and parser.
+model-specific renderer and parser. Direct function tools and MCP-over-stdio
+were both tested; see [Pydantic tools versus MCP](#pydantic-tools-versus-mcp).
 
 ## Ministral 8B: when export success is not deployment success
 
@@ -337,7 +349,9 @@ QAIRT 2.47 was installed alongside the existing device runtime at
 `LD_LIBRARY_PATH`, and `ADSP_LIBRARY_PATH`. The `/opt/qairt/current` symlink was
 not repointed, because doing so would silently change the runtime used by
 every already-validated model. A system-wide update is possible, but should be
-followed by regression tests for all existing bundles.
+followed by regression tests for all existing bundles. The separate
+[`libatomic.so.1` path issue](#qairt-libatomic-path) can produce a similar-looking
+startup failure even when compiler and runtime versions match.
 
 For Qualcomm tooling, this case suggests useful improvements: keep the generic
 GGUF splitter within Genie's supported context count, derive spill/fill settings
@@ -400,15 +414,18 @@ parse decision, and profile is inspectable. It is not the ideal production
 serving path:
 it starts one `genie-t2t-run` process per request, cannot enforce the OpenAI
 client's output-token cap through a Genie CLI option, and repeats model/dialog
-initialization. One ToolACE BFCL response entered a repetitive list, ran until
+initialization. OpenAI temperature and top-p fields also do not rewrite the
+bundle sampler. One ToolACE BFCL response entered a repetitive list, ran until
 `Context Size was exceeded`, and added seven minutes while still correctly
 counting as a model failure.
 
 Qualcomm's persistent C++ GenieAPIService removes per-request process startup.
 In this project it required model-template and parser work before it could
 preserve every native tool format, so the final cross-model rows use the common
-inspectable bridge. A production implementation should combine persistent Genie
-sessions with the proven native renderers and parsers.
+inspectable bridge. The [persistent-service fixes](#persistent-c-service-fixes)
+and [Stock Llama transcript issue](#stock-llama-synthetic-transcripts) explain
+why. A production implementation should combine persistent Genie sessions with
+the proven native renderers and parsers.
 
 Always separate infrastructure from model behavior. `Failed to create device:
 14001`, context-binary incompatibility, connection errors, and board outages are
@@ -424,12 +441,15 @@ demonstration rather than a practical upgrade. Qwen3 4B is a strong modern QAI
 Hub option when its native template and actual Genie sampler are used. Stock
 Llama is useful with its Llama 3 adapter. Nemotron remains interesting for
 reasoning and demonstrates how much correct serving interpretation matters, but
-reasoning on is not the best default for short function selection.
+reasoning on is not the best default for short function selection. The same
+pattern appeared in the [Ministral reasoning variants](#ministral-reasoning-variants).
 
 Ornith is the strongest overall checkpoint tested and retains most of its Desktop
 score after Q4 quantization, but current architecture support leaves it on the
-EVK CPU. That makes it an informative Qualcomm enablement target rather than the
-preferred low-power deployment.
+EVK CPU. The [architecture and threading notes](#ornith-npu-blocker-and-cpu-fallback)
+explain both the NPU blocker and the eight-core workaround. That makes it an
+informative Qualcomm enablement target rather than the preferred low-power
+deployment.
 
 For the hospital demo, expose a focused set of tools for each decision, let the
 model take one next step after each observation, and keep deterministic policy
@@ -445,13 +465,14 @@ also available as machine-readable data in
 `docs/benchmarks/data/toolace25_and_ministral8b_iq9075_20260717.json`.
 
 
-## Appendix: two tests end to end
+## Appendix: benchmark examples and technical notes
 
-These examples come from the saved benchmark artifacts used for the tables
-above. BFCL result files retain the adapter-normalized function call rather than
-the model's complete native response, so the BFCL answers below are labeled as
-normalized. The hospital arena records both native server responses and every
-executed mock tool call.
+The first two sections use saved benchmark artifacts from the tables above.
+BFCL result files retain the adapter-normalized function call rather than the
+model's complete native response, so those answers are labeled as normalized.
+The hospital arena records both native server responses and every executed mock
+tool call. The later sections preserve deployment fixes, workarounds, and
+unresolved limitations that affect interpretation or reproduction.
 
 ### BFCL: preserve both array elements
 
@@ -586,3 +607,235 @@ window, and the strict score was `0.0`. The requests that produced the seven
 calls returned with `returncode: 0`; later retries reached the explicit
 `runtime_context_exhaustion` status. This was a model/protocol loop rather than a
 QNN device-creation or transport failure.
+
+
+### Additional technical findings
+
+The statuses below separate fixes that are reproducible from workarounds and
+limitations that remain unresolved.
+
+#### Inference controls and sampler authority
+
+**Status: resolved operational constraint.**
+
+An OpenAI-compatible endpoint can accept `temperature`, `top_p`, and
+`max_tokens` without those values changing a Genie run. The experimental
+bridge launches `genie-t2t-run` but does not rewrite the sampler in
+`genie_config.json`, so the deployed bundle remains authoritative. The same
+request fields do affect vLLM and llama.cpp endpoints.
+
+This distinction mattered for Qwen3. Its source `generation_config.json`
+specified `0.7 / 20 / 0.8` for temperature, top-k, and top-p, while the
+exported Genie bundle used `0.8 / 40 / 0.95`. A separate deterministic clone
+used `0.0 / 1 / 1.0`. Both device rows were retained because they are
+different inference configurations, even though the weights are identical. The
+bridge also cannot enforce the OpenAI output-token cap through a Genie CLI
+option; natural EOS and the bundle context limit still control termination.
+
+#### Persistent C++ service fixes
+
+**Status: partially resolved.**
+
+Qualcomm's C++ GenieAPIService eliminated per-request process startup, but two
+issues had to be fixed before it became a useful agent host:
+
+- `ConfigFixer` forced `allow-async-init=true`, which caused HTP memory
+  registration failures with deterministic configurations. Preserving an
+  explicitly configured `allow-async-init=false` allowed Stock Llama to load.
+- The response parser expected compact JSON and did not reliably accept ordinary
+  whitespace or multiple `<tool_call>...</tool_call>` blocks. The patched
+  parser returns one or more OpenAI-compatible `tool_calls`.
+
+The service still lacked the same pluggable BFCL, Qwen, Mistral, ToolACE, and
+Nemotron parser coverage as the experimental bridge. Final cross-model tables
+therefore use the common inspectable path rather than mixing server semantics.
+The detailed experiment history is preserved in
+[the hosting findings](docs/benchmarks/agentic_benchmark_findings.md#qualcomm-c-genieapiservice).
+
+#### Stock Llama synthetic transcripts
+
+**Status: parser fixed; generation latency remains.**
+
+Stock Llama sometimes emitted a valid leading `<tool_call>` and then continued
+by inventing a `tool:` result, another assistant turn, or an entire synthetic
+conversation. Treating every later fragment as executable produced one
+pathological 451-second interpretation containing 24 calls.
+
+The corrected response-segment parser preserves consecutive leading calls, so
+genuine parallel requests remain possible, but it never executes
+model-authored environment feedback. This prevents fabricated tool results from
+entering agent state. It cannot stop an already-running `genie-t2t-run`
+generation after the leading call, so a model that continues to the context
+limit still pays the full latency.
+
+#### Strict rescoring and tool-call policy
+
+**Status: resolved benchmark-validity issue.**
+
+The hospital scorer originally focused too heavily on successfully executed
+calls. It now retains invalid requests rejected by Pydantic validation,
+unexecuted attempts, duplicates, forbidden calls, excess calls, and ordering
+errors. A corrected retry does not erase the earlier bad request. In the short
+option cases, even a harmless queue read becomes excess when it happens after
+the required action has already completed.
+
+This changed some historical conclusions. Llama 3.1 lost two apparent hospital
+passes, and Llama 3.2 fell from an apparent `9/14` to `1/14` after strict
+rescoring. Older rows that ignore attempted actions are diagnostics, not
+comparable final results.
+
+A separate `MULTI_TOOL_POLICY=first` diagnostic improved some Stock Llama
+scores by executing only the first parsed call. It was rejected as a benchmark
+default because it hides duplicates and contradictions and can discard genuine
+parallel calls. Final strict scoring retains all attempted and executed actions.
+The reusable rescorer is `agent_arena/rescore_hospital_results.py`.
+
+#### Uniform context-excess exclusions
+
+**Status: resolved selection-fairness issue.**
+
+During selection development, some BFCL cases exceeded the supported Genie
+context before a useful cross-model comparison could be made. Those known cases
+were removed for every model before BFCL80 and BFCL90 were frozen. The final
+runs use the same case IDs and scorer for every row, and web-search cases are
+excluded entirely.
+
+This is different from a model creating its own context failure after starting a
+valid case. Repeated or unnecessary tool calls can expand an initially valid
+hospital or BFCL transcript until the context is full; that remains a failed
+agent trajectory. The shared exclusion list is
+`agent_arena/bfcl_v4_context_excess_exclusions.json`.
+
+#### Ornith NPU blocker and CPU fallback
+
+**Status: NPU path unsupported; CPU workaround validated.**
+
+Ornith reports `model_type=qwen3_5` and combines Qwen3.5
+GatedDeltaNet/linear-attention layers with periodic full-attention layers. QAI
+Hub Models 0.56.0 exports plain `Qwen3ForCausalLM` with ordinary KV-cache
+state. Substituting the Ornith checkpoint fails before compilation. A newer
+Transformers package can instantiate the model on the Desktop, but it does not
+supply the QNN lowering, recurrent-state handling, or Genie implementation
+needed for HTP execution.
+
+The official Q4_K_M GGUF does run through a native ARM llama.cpp build. GGUF is
+not inherently single-core: `-t 8 -tb 8` uses all eight EVK cores. The first
+one-core `htop` capture came from conservative launch defaults, not a file
+format limit. The corrected path reached about 7.3 generated tokens/s and used
+roughly 18 GB RSS. The before/after evidence is in the
+[single-core capture](resources/GGUF-single-core.png) and
+[eight-core capture](resources/GGUF-multi-core.png).
+
+#### Mistral 7B public binary mismatch
+
+**Status: current public package cannot run on IQ9075.**
+
+The QAI Hub Models entry for Mistral-7B-Instruct-v0.3 downloads precompiled
+`snapdragon_8_elite` context binaries rather than a source-export recipe.
+Those assets target Hexagon v79; IQ9075 exposes Hexagon v73. A hosted IQ9075
+profile failed with `QNN_CONTEXT_ERROR_CREATE_FROM_BINARY` before model
+execution, so copying the same binaries to the physical board would not help.
+
+Running this exact model requires new QCS9075-compatible assets from Qualcomm, a
+source Genie export recipe, or a separate custom port. This is a platform
+compatibility result, not a failed agent benchmark. The probe is documented in
+[the QAI Hub follow-up](docs/benchmarks/qc_ai_hub_followup_20260629.md#mistral-7b-instruct-v03-from-qc-ai-hub).
+
+#### Ministral reasoning variants
+
+**Status: tested on the Desktop; no tool-use advantage found.**
+
+The reasoning checkpoints used their native Mistral reasoning parser and
+model-card prompt, but often completed a long reasoning trace without entering
+the executable tool-call channel.
+
+| Desktop model | BFCL80 | BFCL90 | Combined | Hospital strict |
+|---|---:|---:|---:|---:|
+| *Ministral 3B Instruct* | 66/80 | 64/90 | 130/170 | 9/14 |
+| *Ministral 3B Reasoning* | 34/80 | 28/90 | 62/170 | 9/14 |
+| *Ministral 8B Instruct* | 69/80 | 69/90 | 138/170 | 8/14 |
+| *Ministral 8B Reasoning* | 38/80 | 30/90 | 68/170 | 8/14 |
+
+The reasoning variants consumed roughly 800-1,000 median output tokens per BFCL
+request without improving strict hospital completion. For these tool-selection
+workloads, the Instruct checkpoints are the practical choice. Full configuration
+and latency details are in the
+[Ministral variant comparison](docs/benchmarks/ministral_3_variant_comparison_20260717.md).
+
+#### What the BF16-versus-device delta does not prove
+
+**Status: attribution remains unresolved.**
+
+A Desktop BF16 row and an IQ9075 W4A16 row differ in more than quantization.
+They may also use different inference engines, chat templates, tool parsers,
+samplers, output limits, and context sizes. No fully controlled run in this
+project holds all those variables constant while changing only numerical
+precision.
+
+The observed difference should therefore be described as a deployment-path
+delta, not a pure quantization penalty. Qwen3 sampling experiments show that
+configuration explains part of the gap, while Ministral 3B shows that an
+appropriately matched Q4 device path can equal or slightly exceed its BF16
+reference. ToolACE and Nemotron still show material device deltas, but the
+available evidence cannot assign all of that loss to W4A16 alone.
+
+#### QAIRT `libatomic` path
+
+**Status: resolved environment issue.**
+
+One otherwise valid Genie setup failed before model creation with:
+
+```text
+libatomic.so.1: cannot open shared object file
+Qnn getQnnSystemInterface FAILED
+```
+
+The active target was `aarch64-oe-linux-gcc11.2`, but the required
+`libatomic.so.1` was available in QAIRT's legacy
+`lib/aarch64-oe-linux-gcc8.2` directory. The runtime environment now includes
+both target directories before the normal system library paths:
+
+```bash
+export LD_LIBRARY_PATH="$QAIRT_HOME/lib/$QAIRT_TARGET:$QAIRT_HOME/lib/aarch64-oe-linux-gcc8.2:/usr/lib/aarch64-linux-gnu:/lib/aarch64-linux-gnu"
+```
+
+This failure can resemble a QNN incompatibility, but it is a dynamic-library
+search-path problem. The shared environment construction is implemented in
+`agent_arena/model_client.py` and `evk_bench/run_genie_bench.py`.
+
+#### Qwen3 export environment
+
+**Status: resolved, but version-specific.**
+
+Qwen3 required an isolated `qai-qwen3-export` environment:
+
+- Transformers 4.45.0 did not include `transformers.models.qwen3`.
+- Transformers 4.56.2 reached ONNX export but failed because
+  `SHAQwen3Attention.forward_sha()` did not accept the newer
+  `past_key_values` signature.
+- Transformers 4.51.3 worked with QAI Hub Models 0.56.0.
+- The installed model package declared itself published but lacked
+  `release-assets.yaml`. A placeholder was added only inside the throwaway
+  export environment to pass package validation.
+- `--skip-profiling` avoided an unnecessary hosted profiling job after the
+  compilation/export work.
+
+The resulting W4A16 bundle was validated on the physical IQ9075 HTP. These
+workarounds should be treated as exact-version history rather than permanent
+installation advice. Commands and package versions are recorded in the
+[Qwen3 export notes](docs/benchmarks/qwen3_iq9075_export_resume_20260629.md).
+
+#### Pydantic tools versus MCP
+
+**Status: transport was ruled out as the main limitation.**
+
+The initial OR-style agent used tools registered directly with Pydantic AI even
+though the source repository also contained MCP server files. The benchmark
+therefore reproduced both paths with the same tool descriptions and guardrails:
+direct Pydantic function tools and MCP tools discovered over stdio.
+
+Ministral handled both. Stock Llama performed better with MCP in some earlier
+Desktop vLLM runs, while Nemotron struggled with both. MCP can standardize
+discovery and transport, but it cannot turn malformed model text into a valid
+tool call. The dominant requirement remained a match among model training, chat
+template, schema renderer, and output parser.
