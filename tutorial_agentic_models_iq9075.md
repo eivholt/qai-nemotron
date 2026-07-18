@@ -23,7 +23,8 @@ not factual knowledge about Qualcomm products.
 
 ### BFCL V4 function calling
 
-The Berkeley Function-Calling Leaderboard (BFCL) evaluates whether a model
+The [Berkeley Function-Calling Leaderboard](https://gorilla.cs.berkeley.edu/leaderboard.html)
+(BFCL) evaluates whether a model
 selects the correct function and supplies the correct arguments from one or
 more available schemas. BFCL includes simple calls, calls to one of several
 functions, multiple and parallel calls, live-schema cases, relevance, and
@@ -68,21 +69,21 @@ failures are recorded separately and rerun rather than scored as model errors.
 
 ## Models and execution paths
 
-| Model | Size | Best path tested on IQ9075 | Host reference |
+| Model | Size | Best path tested on IQ9075 | Desktop reference |
 |---|---:|---|---|
-| NVIDIA Llama-3.1-Nemotron-Nano-8B-v1 | 8B | Custom W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
+| [NVIDIA Llama-3.1-Nemotron-Nano-8B-v1](https://huggingface.co/nvidia/Llama-3.1-Nemotron-Nano-8B-v1) | 8B | Custom W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
 | Meta Llama 3.1 8B Instruct | 8B | Qualcomm W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
-| Mistral Ministral-3-3B-Instruct-2512 | 3.3B | Custom Q4 Genie/QNN, HTP/NPU | BF16, RTX 5090 |
-| Qwen3-4B-Instruct-2507 | 4B | QAI Hub Models W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
-| Team-ACE ToolACE-2.5-Llama-3.1-8B | 8B | Custom W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
-| DeepReinforce Ornith-1.0-9B | 9B | Q4_K_M GGUF, eight-core CPU | BF16, RTX 5090 |
-| Mistral Ministral-3-8B-Instruct-2512 | 8B | Q3_K_M-to-HTP, QAIRT 2.47, HTP/NPU; Q4 load failed | BF16, RTX 5090 |
-| Salesforce xLAM-2-8b-fc-r | 8B | Host-screened; not exported | BF16, RTX 5090 |
-| MadeAgents Hammer2.1-7b | 7B | Host-screened; not exported | BF16, RTX 5090 |
-| Mistral-7B-Instruct-v0.3 | 7B | Public binary targets incompatible v79 DSP | BF16, RTX 5090 |
-| Llama 3.2 3B and Qwen2 7B | 3B/7B | Diagnostic host runs only | BF16, RTX 5090 |
+| [Mistral Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-BF16) | 3.3B | Custom Q4 Genie/QNN, HTP/NPU | BF16, RTX 5090 |
+| [Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 4B | QAI Hub Models W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
+| [Team-ACE ToolACE-2.5-Llama-3.1-8B](https://huggingface.co/Team-ACE/ToolACE-2.5-Llama-3.1-8B) | 8B | Custom W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
+| [DeepReinforce Ornith-1.0-9B](https://huggingface.co/deepreinforce-ai/Ornith-1.0-9B-GGUF) | 9B | Q4_K_M GGUF, eight-core CPU | BF16, RTX 5090 |
+| [Mistral Ministral-3-8B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512-BF16) | 8B | Q3_K_M-to-HTP, QAIRT 2.47, HTP/NPU; Q4 load failed | BF16, RTX 5090 |
+| Salesforce xLAM-2-8b-fc-r | 8B | Screened on Desktop; not exported | BF16, RTX 5090 |
+| MadeAgents Hammer2.1-7b | 7B | Screened on Desktop; not exported | BF16, RTX 5090 |
+| [Mistral-7B-Instruct-v0.3](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3) | 7B | Public binary targets incompatible v79 DSP | BF16, RTX 5090 |
+| Llama 3.2 3B and Qwen2 7B | 3B/7B | Diagnostic Desktop runs only | BF16, RTX 5090 |
 
-"Screened" does not mean a model is unusable. It means its host result did not
+"Screened" does not mean a model is unusable. It means its Desktop result did not
 justify another costly IQ9075 export in this project, or its license/runtime fit
 was less attractive than the selected candidates.
 
@@ -95,7 +96,7 @@ flowchart LR
     B -->|No current lowering| F[GGUF]
     F --> G[llama.cpp]
     G --> H[EVK CPU fallback]
-    A --> I[BF16 host reference]
+    A --> I[Desktop BF16 reference]
     I --> J[RTX 5090]
 ```
 
@@ -122,22 +123,23 @@ native adapter; the semantic task and official scorer remain unchanged.
 | Nemotron W4A16 thinking off, IQ9075 HTP | 53/80 | 45/90 | **98/170 (57.6%)** |
 | Nemotron W4A16 thinking on, IQ9075 HTP | 47/80 | 41/90 | **88/170 (51.8%)** |
 
-Mermaid does not reliably rotate or wrap `xychart` category labels. I therefore
-separate host references from device results and use short chart labels; the
-tables retain the complete model and runtime names.
+[Mermaid's horizontal XY orientation](https://mermaid.js.org/syntax/xyChart.html)
+places model names on the vertical axis, leaving room for descriptive labels. I
+still separate Desktop references from IQ9075 results so execution paths remain
+visually distinct.
 
 ```mermaid
-xychart-beta
-    title "Host BFCL references"
-    x-axis ["Ornith", "ToolACE", "Qwen3", "M8", "M3", "Nemo"]
+xychart horizontal
+    title "Desktop BFCL references"
+    x-axis ["Ornith 9B BF16", "ToolACE 2.5 8B BF16", "Qwen3 4B BF16", "Ministral 8B BF16", "Ministral 3B BF16", "Nemotron Nano 8B BF16"]
     y-axis "Correct of 170" 0 --> 170
     bar [149, 146, 140, 138, 130, 120]
 ```
 
 ```mermaid
-xychart-beta
+xychart horizontal
     title "IQ9075 BFCL results"
-    x-axis ["Orn-CPU", "M3-NPU", "M8-Q3", "Qwen-NPU", "L3-NPU", "ACE-NPU", "Nemo-Off", "Nemo-On"]
+    x-axis ["Ornith 9B CPU", "Ministral 3B Q4 HTP", "Ministral 8B Q3 HTP", "Qwen3 4B W4A16 HTP", "Llama 3.1 8B W4A16 HTP", "ToolACE 2.5 8B W4A16 HTP", "Nemotron W4A16 off", "Nemotron W4A16 on"]
     y-axis "Correct of 170" 0 --> 170
     bar [145, 132, 128, 116, 108, 108, 98, 88]
 ```
@@ -149,15 +151,15 @@ genuine decision not to call a function can be correct.
 
 The result that changed my model-selection assumptions was Ministral 3B. It is
 smaller than the 8B models, yet its native Mistral tool protocol is disciplined
-and stable across BF16 host and Q4 HTP deployment. Parameter count alone is a
+and stable across Desktop BF16 and Q4 HTP deployment. Parameter count alone is a
 poor predictor of agentic reliability.
 
-ToolACE exposes two legitimate host protocols. Its bundled Llama JSON path is
+ToolACE exposes two legitimate protocols on Desktop. Its bundled Llama JSON path is
 best for this BFCL slice at 146/170. Its model-card Pythonic path scores 140/170
 on BFCL but leads the hospital arena at 10/14. The custom W4A16 IQ9075 export
 scores 108/170 with the Pythonic adapter and only 49/80 in the device Llama JSON
 probe. Protocol choice therefore remains workload- and deployment-specific;
-the device result is not directly interchangeable with the best host row.
+the device result is not directly interchangeable with the best Desktop row.
 
 Nemotron improved substantially after adopting NVIDIA/BFCL-style schemas,
 native placement, final-answer splitting, and conservative parsing. The fresh
@@ -195,7 +197,7 @@ useful for diagnosing near misses, but strict pass is the operational result.
 | Stock Llama W4A16, IQ9075 HTP | 4/14 | 0.286 |
 | Nemotron W4A16 thinking on, IQ9075 HTP | 4/14 | 0.286 |
 
-Ministral 8B Q3 matches its BF16 host reference at 8/14 strict passes, although
+Ministral 8B Q3 matches its Desktop BF16 reference at 8/14 strict passes, although
 its average falls from 0.655 to 0.571. It passes eight of nine bounded decisions
 but none of the five long workflows. The device run takes 1h 02m 50s and includes
 two controlled 300-second generation timeouts in L2; neither is a QNN failure.
@@ -244,19 +246,20 @@ model-specific renderer and parser.
 ## Ministral 8B: when export success is not deployment success
 
 Ministral-3-8B-Instruct-2512 produced one of the most instructive deployment
-failures in this project. Its BF16 host score made it a promising upgrade from
+failures in this project. Its Desktop BF16 score made it a promising upgrade from
 Ministral 3B, and QAIRT 2.47 can ingest the publisher's GGUF architecture. The
 first Q4_K_M build completed successfully, but a completed export did not mean
 the package could be loaded on IQ9075.
 
 ### Q4 compiled, but the full model would not map
 
-The official Q4_K_M GGUF is about 4.9 GiB. QAIRT's automatic splitter selected
+The [official Q4_K_M GGUF](https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512-GGUF)
+is about 4.9 GiB. QAIRT's automatic splitter selected
 17 contexts, while this Genie path accepts at most nine. Forcing nine produced
 a valid-looking 6.5 GiB Genie export in 1h 26m 34s. The first physical run then
 exposed two separate problems:
 
-1. The host compiler was QAIRT 2.47, but `/opt/qairt/current` on the EVK pointed
+1. The QAIRT compiler on the Desktop was version 2.47, but `/opt/qairt/current` on the EVK pointed
    to QAIRT 2.45 and Genie 1.17. That runtime rejected context zero with QNN
    `err 5000`.
 2. A side-by-side QAIRT 2.47 runtime with Genie 1.18 accepted the binaries, but
@@ -280,7 +283,8 @@ left at the generated zero value.
 ### A Q3 package fits, with a performance tradeoff
 
 QAIRT 2.47 documents HTP quantizer support for Q3_K GGUF tensors. I therefore
-used the same 8B checkpoint in Q3_K_M form. This is a more aggressive
+used the same 8B checkpoint in [Q3_K_M form](https://huggingface.co/bartowski/mistralai_Ministral-3-8B-Instruct-2512-GGUF).
+This is a more aggressive
 quantization, not a smaller parameter-count model. The 4.0 GiB source produced
 a 6.1 GiB, nine-context HTP package. It loaded all contexts with the side-by-side
 QAIRT 2.47 runtime and answered a native Mistral prompt correctly:
@@ -314,7 +318,7 @@ completed BFCL80 at 67/80 and BFCL90 at 61/90: 128/170, or 75.3%. Three BFCL80
 requests and two BFCL90 requests timed out; all five were counted as failures.
 The suites took 1h 13m 44s and 1h 15m 04s respectively. The result is only four
 calls behind Ministral 3B Q4 on HTP, but it is much slower and remains below the
-8B BF16 host reference at 138/170.
+Desktop 8B BF16 reference at 138/170.
 
 A raw `Say OK.` prompt without Mistral's native chat wrapper ran for more than
 11 minutes and did not terminate. The exact native `[INST]...[/INST]` request
@@ -348,7 +352,7 @@ configured for 176 GB RAM and 96 GB swap. GPU inference generally fit in VRAM;
 the large system-RAM figures below come from quantization and graph export, not
 ordinary model serving.
 
-| Operation | Wall time | Peak host memory | Disk/artifact notes |
+| Operation | Wall time | Peak Desktop memory | Disk/artifact notes |
 |---|---:|---:|---|
 | Nemotron W4A16 quantization, 4K context | 44m 59s measured | 174 GiB RSS measured | 32.1 GB `model.data`; final bundle about 5 GB |
 | ToolACE W4A16 quantization | 3h 31m measured | 183.4 GB RSS measured | 32.1 GB `model.data` plus ONNX graphs |
@@ -357,9 +361,9 @@ ordinary model serving.
 | Ministral 3B Q4 custom HTP build | about 25m measured | unrecorded | source about 2 GB; container/export about 3.3 GB each |
 | Ministral 8B Q4 generic GGUF-to-HTP build | 1h 26m 34s measured | 68.4 GB RSS measured | source 4.9 GiB; cache 66 GB; export 6.5 GiB; final HTP mapping failed |
 | Ministral 8B Q3 generic GGUF-to-HTP build | 1h 14m 42s measured | 84.8 GB RSS measured | source 4.0 GiB; cache 69 GB; export 6.1 GiB; HTP load succeeded |
-| Ministral 8B Q3 BFCL80 on IQ9075 | 1h 13m 44s measured | about 0.38 GB host-client RSS | 67/80; three strict 300-second timeouts |
-| Ministral 8B Q3 BFCL90 on IQ9075 | 1h 15m 04s measured | about 0.38 GB host-client RSS | 61/90; two strict 300-second timeouts |
-| Ministral 8B Q3 hospital14 on IQ9075 | 1h 02m 50s measured | about 0.12 GB host-client RSS | 8/14; two controlled timeouts in L2 |
+| Ministral 8B Q3 BFCL80 on IQ9075 | 1h 13m 44s measured | about 0.38 GB Desktop client RSS | 67/80; three strict 300-second timeouts |
+| Ministral 8B Q3 BFCL90 on IQ9075 | 1h 15m 04s measured | about 0.38 GB Desktop client RSS | 61/90; two strict 300-second timeouts |
+| Ministral 8B Q3 hospital14 on IQ9075 | 1h 02m 50s measured | about 0.12 GB Desktop client RSS | 8/14; two controlled timeouts in L2 |
 | Qwen3 4B QAI Hub export | unrecorded | unrecorded | downloaded W4A16 checkpoint cache about 17 GB |
 | Ornith 9B CPU deployment | no NPU export | about 18 GB EVK RSS measured | official Q4_K_M file 5.63 GB |
 
@@ -388,7 +392,8 @@ turns.
 ## Hosting lessons
 
 The experimental OpenAI bridge is valuable because every prompt, raw response,
-parse decision, and profile is inspectable. It is not the ideal production host:
+parse decision, and profile is inspectable. It is not the ideal production
+serving path:
 it starts one `genie-t2t-run` process per request, cannot enforce the OpenAI
 client's output-token cap through a Genie CLI option, and repeats model/dialog
 initialization. One ToolACE BFCL response entered a repetitive list, ran until
@@ -417,7 +422,7 @@ Llama is useful with its Llama 3 adapter. Nemotron remains interesting for
 reasoning and demonstrates how much correct serving interpretation matters, but
 reasoning on is not the best default for short function selection.
 
-Ornith is the strongest overall checkpoint tested and retains most of its host
+Ornith is the strongest overall checkpoint tested and retains most of its Desktop
 score after Q4 quantization, but current architecture support leaves it on the
 EVK CPU. That makes it an informative Qualcomm enablement target rather than the
 preferred low-power deployment.
@@ -434,15 +439,3 @@ directories are intentionally git-ignored because they contain large prompts,
 responses, and Genie profiles. The ToolACE and Ministral 8B measurements are
 also available as machine-readable data in
 `docs/benchmarks/data/toolace25_and_ministral8b_iq9075_20260717.json`.
-
-## Sources
-
-- [Berkeley Function-Calling Leaderboard](https://gorilla.cs.berkeley.edu/leaderboard.html)
-- [NVIDIA Llama-3.1-Nemotron-Nano-8B-v1](https://huggingface.co/nvidia/Llama-3.1-Nemotron-Nano-8B-v1)
-- [Mistral Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-BF16)
-- [Mistral Ministral-3-8B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512-BF16)
-- [Mistral official Ministral-3-8B GGUF collection](https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512-GGUF)
-- [Community Q3_K_M used for the IQ9075 fit experiment](https://huggingface.co/bartowski/mistralai_Ministral-3-8B-Instruct-2512-GGUF)
-- [Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507)
-- [ToolACE-2.5-Llama-3.1-8B](https://huggingface.co/Team-ACE/ToolACE-2.5-Llama-3.1-8B)
-- [Ornith-1.0-9B GGUF](https://huggingface.co/deepreinforce-ai/Ornith-1.0-9B-GGUF)
