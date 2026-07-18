@@ -2,8 +2,7 @@
 
 This tutorial compares small language models as local planning and tool-selection
 engines on the Qualcomm Dragonwing IQ9075. It is a companion to
-[Deploy Nemotron Nano on Dragonwing IQ9075](tutorial_export_nemotron-nano_iq9.md),
-also available in the [Dragonwing documentation](https://dragonwingdocs.qualcomm.com/tutorials/deploy-nemotron-nano-on-dragonwing-iq9075),
+[Deploy Nemotron Nano on Dragonwing IQ9075](https://dragonwingdocs.qualcomm.com/tutorials/deploy-nemotron-nano-on-dragonwing-iq9075),
 which explains the complete workstation setup, W4A16 quantization, QAI Hub
 compilation, transfer, and Genie validation process.
 I do not repeat those setup steps here. The focus is what happens after a model
