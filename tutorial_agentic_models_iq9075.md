@@ -3,9 +3,9 @@
 This tutorial compares small language models as local planning and tool-selection
 engines on the Qualcomm Dragonwing IQ9075. It is a companion to
 [Deploy Nemotron Nano on Dragonwing IQ9075](tutorial_export_nemotron-nano_iq9.md),
+also available in the [Dragonwing documentation](https://dragonwingdocs.qualcomm.com/tutorials/deploy-nemotron-nano-on-dragonwing-iq9075),
 which explains the complete workstation setup, W4A16 quantization, QAI Hub
-compilation, transfer, and Genie validation process. The same tutorial is
-[published on Dragonwing documentation](https://dragonwingdocs.qualcomm.com/tutorials/deploy-nemotron-nano-on-dragonwing-iq9075).
+compilation, transfer, and Genie validation process.
 I do not repeat those setup steps here. The focus is what happens after a model
 can answer a prompt: can it reliably choose tools, supply valid arguments, use
 results over several turns, and stop without taking unnecessary actions?
@@ -19,7 +19,7 @@ incorrect protocol.
 ## What I tested
 
 I used two complementary benchmark families. They intentionally test tool use,
-not factual knowledge about Qualcomm products.
+not factual knowledge.
 
 ### BFCL V4 function calling
 
@@ -53,35 +53,37 @@ pie showData
 
 The second arena is a realistic local-agent workload. A hospital logistics
 coordinator assigns porters or robots, checks cold-chain limits and elevator
-state, escalates conflicts, and updates jobs. The agent does not control motors
-or safety-critical actuators directly.
+state, escalates conflicts, and updates jobs. This represents realistic edge agentic AI tasks.
 
 `agent_arena/pydantic_hospital_logistics_arena.py` uses a real Pydantic AI loop
 against deterministic mock tools from `agent_arena/hospital_logistics_runtime.py`.
 The model chooses the next action, the tool executes, and the result is returned
 in the next model turn. It is not required to emit an entire plan in one answer.
 
-The comparable hard slice contains nine bounded choices (`O1`-`O5` and
-`P1`-`P4`) and five longer workflows (`L0`-`L4`). Scoring uses a predefined
-action ledger, not an LLM judge. Missing, wrong, duplicate, forbidden, excess,
-unexecuted, and out-of-order calls all count against the model. Infrastructure
-failures are recorded separately and rerun rather than scored as model errors.
+The test set has nine short tasks (`O1`-`O5` and `P1`-`P4`), where the model
+chooses between a few actions, and five longer tasks (`L0`-`L4`) that require
+several tool calls. Fixed rules check each run automatically; no LLM grades the
+answers. Missing or wrong calls, repeated or unnecessary actions, forbidden
+tools, calls that never execute, and steps in the wrong order all count against
+the model. System failures are rerun and do not count as model mistakes.
 
 ## Models and execution paths
 
 | Model | Size | Best path tested on IQ9075 | Desktop reference |
 |---|---:|---|---|
 | [NVIDIA Llama-3.1-Nemotron-Nano-8B-v1](https://huggingface.co/nvidia/Llama-3.1-Nemotron-Nano-8B-v1) | 8B | Custom W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
-| Meta Llama 3.1 8B Instruct | 8B | Qualcomm W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
+| [Meta Llama 3.1 8B Instruct](https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct) | 8B | Qualcomm W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
 | [Mistral Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-BF16) | 3.3B | Custom Q4 Genie/QNN, HTP/NPU | BF16, RTX 5090 |
 | [Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 4B | QAI Hub Models W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
 | [Team-ACE ToolACE-2.5-Llama-3.1-8B](https://huggingface.co/Team-ACE/ToolACE-2.5-Llama-3.1-8B) | 8B | Custom W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
 | [DeepReinforce Ornith-1.0-9B](https://huggingface.co/deepreinforce-ai/Ornith-1.0-9B-GGUF) | 9B | Q4_K_M GGUF, eight-core CPU | BF16, RTX 5090 |
 | [Mistral Ministral-3-8B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512-BF16) | 8B | Q3_K_M-to-HTP, QAIRT 2.47, HTP/NPU; Q4 load failed | BF16, RTX 5090 |
-| Salesforce xLAM-2-8b-fc-r | 8B | Screened on Desktop; not exported | BF16, RTX 5090 |
-| MadeAgents Hammer2.1-7b | 7B | Screened on Desktop; not exported | BF16, RTX 5090 |
-| [Mistral-7B-Instruct-v0.3](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3) | 7B | Public binary targets incompatible v79 DSP | BF16, RTX 5090 |
-| Llama 3.2 3B and Qwen2 7B | 3B/7B | Diagnostic Desktop runs only | BF16, RTX 5090 |
+| *[Salesforce Llama-xLAM-2-8b-fc-r](https://huggingface.co/Salesforce/Llama-xLAM-2-8b-fc-r)* | 8B | Screened on Desktop; not exported | BF16, RTX 5090 |
+| *[MadeAgents Hammer2.1-7b](https://huggingface.co/MadeAgents/Hammer2.1-7b)* | 7B | Screened on Desktop; not exported | BF16, RTX 5090 |
+| *[Mistral-7B-Instruct-v0.3](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3)* | 7B | Public binary targets incompatible v79 DSP | BF16, RTX 5090 |
+| *[Meta Llama 3.2 3B Instruct](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct) and [Qwen2 7B Instruct](https://huggingface.co/Qwen/Qwen2-7B-Instruct)* | 3B/7B | Diagnostic Desktop runs only | BF16, RTX 5090 |
+
+*Italic model names were run only on the Desktop; they did not complete an IQ9075 inference run.*
 
 "Screened" does not mean a model is unusable. It means its Desktop result did not
 justify another costly IQ9075 export in this project, or its license/runtime fit
@@ -183,7 +185,7 @@ useful for diagnosing near misses, but strict pass is the operational result.
 |---|---:|---:|
 | ToolACE 2.5 BF16, native Pythonic | 10/14 | 0.789 |
 | Qwen3 4B BF16 | 9/14 | 0.779 |
-| xLAM 2 8B BF16 | 9/14 | 0.767 |
+| *xLAM 2 8B BF16* | 9/14 | 0.767 |
 | Ministral 3B BF16 | 9/14 | 0.643 |
 | Ornith 9B Q4_K_M, IQ9075 CPU | 9/14 | 0.796 |
 | Ministral 3B Q4, IQ9075 HTP | 9/14 | 0.643 |
@@ -439,3 +441,146 @@ directories are intentionally git-ignored because they contain large prompts,
 responses, and Genie profiles. The ToolACE and Ministral 8B measurements are
 also available as machine-readable data in
 `docs/benchmarks/data/toolace25_and_ministral8b_iq9075_20260717.json`.
+
+
+## Appendix: two tests end to end
+
+These examples come from the saved benchmark artifacts used for the tables
+above. BFCL result files retain the adapter-normalized function call rather than
+the model's complete native response, so the BFCL answers below are labeled as
+normalized. The hospital arena records both native server responses and every
+executed mock tool call.
+
+### BFCL: preserve both array elements
+
+`simple_python_72` is a non-live BFCL V4 case in the BFCL80 selection. It asks:
+
+> Calculate the expected evolutionary fitness of a creature, with trait A
+> contributing to 40% of the fitness and trait B contributing 60%, if trait A
+> has a value of 0.8 and trait B a value of 0.7.
+
+The model receives one function schema. Descriptions are omitted here, but the
+types and required fields are unchanged:
+
+```json
+{
+  "name": "calculate_fitness",
+  "parameters": {
+    "type": "dict",
+    "properties": {
+      "trait_values": {"type": "array", "items": {"type": "float"}},
+      "trait_contributions": {"type": "array", "items": {"type": "float"}}
+    },
+    "required": ["trait_values", "trait_contributions"]
+  }
+}
+```
+
+The accepted call must preserve both traits and both contribution values:
+
+```json
+{"calculate_fitness": {"trait_values": [0.8, 0.7], "trait_contributions": [0.4, 0.6]}}
+```
+
+Ornith 9B Q4_K_M on the IQ9075 CPU produced this correct normalized answer:
+
+```json
+[{"calculate_fitness": "{\"trait_values\":[0.8, 0.7],\"trait_contributions\":[0.4, 0.6]}"}]
+```
+
+Nemotron W4A16 with thinking off on the IQ9075 HTP produced a syntactically
+valid but incorrect normalized answer:
+
+```json
+[{"calculate_fitness": "{\"trait_values\": [0.8], \"trait_contributions\": [0.4, 0.6]}"}]
+```
+
+The function choice and call format were valid, but the value `0.7` was missing
+from `trait_values`. The official deterministic scorer therefore rejected the
+call with `Invalid value for parameter 'trait_values': [0.8]`. This is a useful
+logical failure example: tolerant parsing cannot repair a value the model did
+not emit.
+
+### Hospital: route an urgent sample around a failed elevator
+
+`hospital_L1_sample_elevator_out` is defined in
+`agent_arena/hospital_logistics_runtime.py` and run by
+`agent_arena/pydantic_hospital_logistics_arena.py`. The initial model-facing
+event is intentionally sparse:
+
+```json
+{
+  "scenario": "Blood sample must reach lab in 12 minutes; one elevator is out.",
+  "event": {"kind": "new_jobs", "time": "09:00", "jobs": ["JOB-SAMPLE-7"]}
+}
+```
+
+The prompt tells the agent to gather facts with tools instead of assuming which
+elevator, carrier, or asset is ready. The strict ledger requires
+`get_pending_jobs`, `get_asset_location`, `check_elevator_status`,
+`reserve_elevator`, `assign_porter`, `update_job_status`, and `notify_ward`.
+It forbids `assign_robot` and `escalate_to_human`. The elevator reservation must
+use `E2`, and the assignment must use `PORTER-A` and `JOB-SAMPLE-7`.
+
+ToolACE 2.5 BF16 with its native Pythonic protocol on the Desktop completed this
+trajectory. Each arrow below is a real mock result returned before the model
+selected its next action:
+
+```text
+get_pending_jobs()
+  -> urgent JOB-SAMPLE-7; PORTER-A is available; ROBOT-1 has 78% battery
+check_elevator_status("Ward 4B", "Central Lab")
+  -> E1 is out; E2 is available
+reserve_elevator(elevator_id="E2", job_id="JOB-SAMPLE-7")
+  -> ok
+assign_porter(porter_id="PORTER-A", job_id="JOB-SAMPLE-7")
+  -> ok; ETA 3 minutes; reserved elevator E2
+notify_ward(ward="Ward 4B", message="...")
+  -> ok
+get_asset_location(asset_id="sample-tube-7")
+  -> Ward 4B nurses station; ready
+update_job_status(job_id="JOB-SAMPLE-7", status="assigned")
+  -> ok
+```
+
+The model initially stopped after notifying the ward. The arena's bounded
+completion pass returned the existing ledger and asked only for unfinished
+requirements; ToolACE then checked the asset and updated the status without
+repeating earlier calls. Its final answer was:
+
+> The blood sample has been successfully assigned to the logistics workflow.
+> The sample is located at the Ward 4B nurses station and is ready for
+> transport. The job status has been updated to "assigned." The sample will be
+> transported to the Central Lab via elevator E2 with Porter-A, and the
+> estimated arrival time is 12 minutes. Ward 4B has been notified of the
+> logistics status.
+
+All seven required calls executed once, the key arguments matched, no forbidden
+action ran, and route reservation preceded assignment. The strict score was
+`1.0`.
+
+Nemotron W4A16 with thinking off received the same case on the IQ9075 HTP. Its
+first native response was a list of tool names rather than executable calls:
+
+```text
+<TOOLCALL>[get_pending_jobs, assign_pending_job, check_pending_cold_chain,
+reserve_pending_elevator, get_asset_location, check_elevator_status,
+assign_porter, assign_robot, notify_ward, query_policy]</TOOLCALL>
+```
+
+The adapter could conservatively recover only `get_pending_jobs`. After the
+tool returned the queue, later native responses requested the same tool again,
+including:
+
+```text
+<TOOLCALL>[get_pending_jobs(jobs="event", event="scenario")]</TOOLCALL>
+```
+
+The executed trajectory became seven calls to `get_pending_jobs`. Duplicate
+calls returned `ok=false`, `reason="no_new_information"`, and explicitly told
+the model to choose the next required action, but it did not advance. Six
+required actions remained missing, the growing transcript exhausted the context
+window, and the strict score was `0.0`. The requests that produced the seven
+calls returned with `returncode: 0`; later retries reached the explicit
+`runtime_context_exhaustion` status. This was a model/protocol loop rather than a
+QNN device-creation or transport failure.
