@@ -9,17 +9,13 @@ Those setup steps are not repeated here. The focus is what happens after a model
 can answer a prompt: can it reliably choose tools, supply valid arguments, use
 results over several turns, and stop without taking unnecessary actions?
 
-The central finding is that an agentic model is not just a checkpoint. The unit
-under test is the checkpoint, quantization, chat template, tool-schema renderer,
-output parser, inference runtime, and client loop. A smaller model behind its
-native tool protocol can outperform a larger model behind a plausible but
-incorrect protocol.
+> The central finding is that an agentic model is not just a checkpoint. Quantization, chat template, tool-schema renderer, output parser, inference runtime, and client loop can severely impact performance. A smaller model behind its native tool protocol can outperform a larger model behind a plausible but
+incorrect protocol!
 
 ## Test setup
 
-The evaluation uses two complementary benchmark families. They intentionally test
-tool use,
-not factual knowledge.
+The evaluation uses two complementary benchmark collections. They intentionally test
+tool use, not factual knowledge.
 
 ### BFCL V4 function calling
 
@@ -32,9 +28,7 @@ irrelevance. Irrelevance matters because a useful agent must decline to call a
 tool when none can satisfy the request.
 
 The official BFCL V4 deterministic scorer runs through
-`agent_arena/bfcl_v4_subset_runner.py`. These are partial local evaluations,
-not official leaderboard submissions. Web-search agent tests are excluded and
-no network requests are executed.
+`agent_arena/bfcl_v4_subset_runner.py`. These are subsets of the official tests, just enough to get a broad evaluation, without having to wait days per model. Web-search agent tests are excluded and no network requests are executed.
 
 - BFCL80: `agent_arena/benchmark_selections/bfcl_v4_holdout80_nonweb_20260627.json`
 - BFCL90: `agent_arena/benchmark_selections/bfcl_v4_fresh90_nonweb_20260628.json`
@@ -51,7 +45,7 @@ pie showData
     "Fresh BFCL90" : 90
 ```
 
-### Iterative hospital logistics
+### Real-world scenario benchmarks: hospital logistics
 
 The second arena is a realistic local-agent workload. A hospital logistics
 coordinator assigns porters or robots, checks cold-chain limits and elevator
@@ -64,7 +58,7 @@ in the next model turn. It is not required to emit an entire plan in one answer.
 
 The test set has nine short tasks (`O1`-`O5` and `P1`-`P4`), where the model
 chooses between a few actions, and five longer tasks (`L0`-`L4`) that require
-several tool calls. Fixed rules check each run automatically; no LLM grades the
+several tool calls. Fixed rules check each run programmatically; no LLM grades the
 answers. Missing or wrong calls, repeated or unnecessary actions, forbidden
 tools, calls that never execute, and steps in the wrong order all count against
 the model. System failures are rerun and do not count as model mistakes. The
@@ -139,10 +133,7 @@ quantization penalties; see [What the BF16-versus-device delta does not prove](#
 | Nemotron W4A16 thinking off, IQ9075 HTP | 53/80 | 45/90 | **98/170 (57.6%)** |
 | Nemotron W4A16 thinking on, IQ9075 HTP | 47/80 | 41/90 | **88/170 (51.8%)** |
 
-[Mermaid's horizontal XY orientation](https://mermaid.js.org/syntax/xyChart.html)
-places model names on the vertical axis, leaving room for descriptive labels. The
-charts separate Desktop references from IQ9075 results so execution paths remain
-visually distinct.
+
 
 ```mermaid
 xychart horizontal
@@ -165,7 +156,7 @@ row includes five requests that reached the 300-second hard timeout. All five
 are recorded as non-passing calls, even in BFCL irrelevance categories where a
 genuine decision not to call a function can be correct.
 
-Ministral 3B challenges simple model-selection assumptions. It is smaller than
+> Ministral 3B challenges simple model-selection assumptions. It is smaller than
 the 8B models, yet its native Mistral tool protocol is disciplined
 and stable across Desktop BF16 and Q4 HTP deployment. Parameter count alone is a
 poor predictor of agentic reliability.
