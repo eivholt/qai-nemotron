@@ -67,19 +67,18 @@ rejected retries and excess calls are retained.
 
 ## Models and execution paths
 
-*In the model inventory, italics identify checkpoints with Desktop results only;
-plain names also completed on IQ9075. In the result tables, italics identify
-Desktop runs.*
+*In the model inventory and benchmark tables, **bold** identifies models or runs
+completed on IQ9075. Italics identify Desktop-only checkpoints or runs.*
 
 | Model | Size | Best path tested on IQ9075 | Desktop reference |
 |---|---:|---|---|
-| [NVIDIA Llama-3.1-Nemotron-Nano-8B-v1](https://huggingface.co/nvidia/Llama-3.1-Nemotron-Nano-8B-v1) | 8B | Custom W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
-| [Meta Llama 3.1 8B Instruct](https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct) | 8B | Qualcomm W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
-| [Mistral Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-BF16) | 3.3B | Custom Q4 Genie/QNN, HTP/NPU | BF16, RTX 5090 |
-| [Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 4B | QAI Hub Models W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
-| [Team-ACE ToolACE-2.5-Llama-3.1-8B](https://huggingface.co/Team-ACE/ToolACE-2.5-Llama-3.1-8B) | 8B | Custom W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
-| [DeepReinforce Ornith-1.0-9B](https://huggingface.co/deepreinforce-ai/Ornith-1.0-9B-GGUF) | 9B | Q4_K_M GGUF, eight-core CPU | BF16, RTX 5090 |
-| [Mistral Ministral-3-8B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512-BF16) | 8B | Q3_K_M-to-HTP, QAIRT 2.47, HTP/NPU; Q4 load failed | BF16, RTX 5090 |
+| **[NVIDIA Llama-3.1-Nemotron-Nano-8B-v1](https://huggingface.co/nvidia/Llama-3.1-Nemotron-Nano-8B-v1)** | 8B | Custom W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
+| **[Meta Llama 3.1 8B Instruct](https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct)** | 8B | Qualcomm W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
+| **[Mistral Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-BF16)** | 3.3B | Custom Q4 Genie/QNN, HTP/NPU | BF16, RTX 5090 |
+| **[Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507)** | 4B | QAI Hub Models W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
+| **[Team-ACE ToolACE-2.5-Llama-3.1-8B](https://huggingface.co/Team-ACE/ToolACE-2.5-Llama-3.1-8B)** | 8B | Custom W4A16 Genie, HTP/NPU | BF16, RTX 5090 |
+| **[DeepReinforce Ornith-1.0-9B](https://huggingface.co/deepreinforce-ai/Ornith-1.0-9B-GGUF)** | 9B | Q4_K_M GGUF, eight-core CPU | BF16, RTX 5090 |
+| **[Mistral Ministral-3-8B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512-BF16)** | 8B | Q3_K_M-to-HTP, QAIRT 2.47, HTP/NPU; Q4 load failed | BF16, RTX 5090 |
 | *[Salesforce Llama-xLAM-2-8b-fc-r](https://huggingface.co/Salesforce/Llama-xLAM-2-8b-fc-r)* | 8B | Screened on Desktop; not exported | BF16, RTX 5090 |
 | *[MadeAgents Hammer2.1-7b](https://huggingface.co/MadeAgents/Hammer2.1-7b)* | 7B | Screened on Desktop; not exported | BF16, RTX 5090 |
 | *[Mistral-7B-Instruct-v0.3](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.3)* | 7B | Public binary targets incompatible v79 DSP | BF16, RTX 5090 |
@@ -120,18 +119,18 @@ quantization penalties; see [What the BF16-versus-device delta does not prove](#
 |---|---:|---:|---:|
 | *Ornith 9B BF16, RTX 5090* | 71/80 | 78/90 | **149/170 (87.6%)** |
 | *ToolACE 2.5 BF16, RTX 5090, Llama JSON* | 74/80 | 72/90 | **146/170 (85.9%)** |
-| Ornith 9B Q4_K_M, IQ9075 CPU | 69/80 | 76/90 | **145/170 (85.3%)** |
+| **Ornith 9B Q4_K_M, IQ9075 CPU** | 69/80 | 76/90 | **145/170 (85.3%)** |
 | *Qwen3 4B BF16, RTX 5090* | 70/80 | 70/90 | **140/170 (82.4%)** |
 | *Ministral 8B Instruct BF16, RTX 5090* | 69/80 | 69/90 | **138/170 (81.2%)** |
-| Ministral 3B Q4, IQ9075 HTP | 66/80 | 66/90 | **132/170 (77.6%)** |
+| **Ministral 3B Q4, IQ9075 HTP** | 66/80 | 66/90 | **132/170 (77.6%)** |
 | *Ministral 3B BF16, RTX 5090* | 66/80 | 64/90 | **130/170 (76.5%)** |
-| Ministral 8B Q3, IQ9075 HTP | 67/80 | 61/90 | **128/170 (75.3%)** |
+| **Ministral 8B Q3, IQ9075 HTP** | 67/80 | 61/90 | **128/170 (75.3%)** |
 | *Nemotron Nano BF16, RTX 5090* | 59/80 | 61/90 | **120/170 (70.6%)** |
-| Qwen3 4B W4A16 deterministic, IQ9075 HTP | 58/80 | 58/90 | **116/170 (68.2%)** |
-| Stock Llama 3.1 W4A16, IQ9075 HTP | 55/80 | 53/90 | **108/170 (63.5%)** |
-| ToolACE 2.5 W4A16 Pythonic, IQ9075 HTP | 56/80 | 52/90 | **108/170 (63.5%)** |
-| Nemotron W4A16 thinking off, IQ9075 HTP | 53/80 | 45/90 | **98/170 (57.6%)** |
-| Nemotron W4A16 thinking on, IQ9075 HTP | 47/80 | 41/90 | **88/170 (51.8%)** |
+| **Qwen3 4B W4A16 deterministic, IQ9075 HTP** | 58/80 | 58/90 | **116/170 (68.2%)** |
+| **Stock Llama 3.1 W4A16, IQ9075 HTP** | 55/80 | 53/90 | **108/170 (63.5%)** |
+| **ToolACE 2.5 W4A16 Pythonic, IQ9075 HTP** | 56/80 | 52/90 | **108/170 (63.5%)** |
+| **Nemotron W4A16 thinking off, IQ9075 HTP** | 53/80 | 45/90 | **98/170 (57.6%)** |
+| **Nemotron W4A16 thinking on, IQ9075 HTP** | 47/80 | 41/90 | **88/170 (51.8%)** |
 
 
 
@@ -192,17 +191,17 @@ useful for diagnosing near misses, but strict pass is the operational result.
 | *Qwen3 4B BF16* | 9/14 | 0.779 |
 | *xLAM 2 8B BF16* | 9/14 | 0.767 |
 | *Ministral 3B BF16* | 9/14 | 0.643 |
-| Ornith 9B Q4_K_M, IQ9075 CPU | 9/14 | 0.796 |
-| Ministral 3B Q4, IQ9075 HTP | 9/14 | 0.643 |
-| Qwen3 4B W4A16 deterministic, IQ9075 HTP | 9/14 | 0.643 |
+| **Ornith 9B Q4_K_M, IQ9075 CPU** | 9/14 | 0.796 |
+| **Ministral 3B Q4, IQ9075 HTP** | 9/14 | 0.643 |
+| **Qwen3 4B W4A16 deterministic, IQ9075 HTP** | 9/14 | 0.643 |
 | *Ministral 8B BF16, RTX 5090* | 8/14 | 0.655 |
 | *Llama 3.1 8B BF16* | 8/14 | 0.601 |
-| Ministral 8B Q3, IQ9075 HTP | 8/14 | 0.571 |
+| **Ministral 8B Q3, IQ9075 HTP** | 8/14 | 0.571 |
 | *Nemotron Nano BF16* | 6/14 | 0.429 |
-| ToolACE 2.5 W4A16, IQ9075 HTP | 6/14 | 0.429 |
-| Nemotron W4A16 thinking off, IQ9075 HTP | 5/14 | 0.357 |
-| Stock Llama W4A16, IQ9075 HTP | 4/14 | 0.286 |
-| Nemotron W4A16 thinking on, IQ9075 HTP | 4/14 | 0.286 |
+| **ToolACE 2.5 W4A16, IQ9075 HTP** | 6/14 | 0.429 |
+| **Nemotron W4A16 thinking off, IQ9075 HTP** | 5/14 | 0.357 |
+| **Stock Llama W4A16, IQ9075 HTP** | 4/14 | 0.286 |
+| **Nemotron W4A16 thinking on, IQ9075 HTP** | 4/14 | 0.286 |
 
 Ministral 8B Q3 matches its Desktop BF16 reference at 8/14 strict passes, although
 its average falls from 0.655 to 0.571. It passes eight of nine bounded decisions
@@ -361,6 +360,33 @@ configured for 176 GB RAM and 96 GB swap. GPU inference generally fit in VRAM;
 the large system-RAM figures below come from quantization and graph export, not
 ordinary model serving.
 
+### IQ9075 inference throughput
+
+The measurements below come from Genie profiles or runtime-native counters on
+the physical EVK. They are useful deployment indicators, but they are not a
+single controlled speed benchmark: prompt lengths, output lengths, context
+sizes, and serving paths differ. Shared deployments appear once even when the
+benchmark also tests different reasoning or sampling modes.
+
+| IQ9075 deployment | Compute | Prompt tok/s | Generated tok/s | Measurement basis |
+|---|---|---:|---:|---|
+| **Qwen3 4B W4A16** | HTP/NPU | 947.87 | 16.44 | BFCL90 profile medians; about 1.4 s dialog initialization |
+| **ToolACE 2.5 8B W4A16** | HTP/NPU | not recorded | 9.9 | Representative Genie profile |
+| **Nemotron Nano 8B W4A16** | HTP/NPU | 655.43 | 9.54 | Median of six saved hospital requests; 2.13 s dialog initialization |
+| **Stock Llama 3.1 8B W4A16** | HTP/NPU | 657.75 | 9.50 | Median of two saved hospital requests; 2.14 s dialog initialization |
+| **Ornith 9B Q4_K_M** | CPU, 8 threads | about 26 | 6.9-7.2 | Native BFCL run; persistent llama.cpp server |
+| **Ministral 3B Q4** | HTP/NPU | 266.45 | 4.93 | Median of 13 saved hospital requests; 2.04 s dialog initialization |
+| **Ministral 8B Q3** | HTP/NPU | 15.32 | 1.91 | Native smoke profile; 4.39 s dialog initialization |
+
+Qwen3's full BFCL profile statistics are recorded in the
+[Qwen3 export notes](docs/benchmarks/qwen3_iq9075_export_resume_20260629.md).
+Ornith thread scaling and the Ministral 8B profile are documented in the
+[model coverage report](docs/benchmarks/model_coverage_and_agentic_comparison_20260716.md),
+and ToolACE's representative rate is retained in the
+[machine-readable comparison data](docs/benchmarks/data/toolace25_and_ministral8b_iq9075_20260717.json).
+
+### Export and benchmark resources
+
 | Operation | Wall time | Peak Desktop memory | Disk/artifact notes |
 |---|---:|---:|---|
 | Nemotron W4A16 quantization, 4K context | 44m 59s measured | 174 GiB RSS measured | 32.1 GB `model.data`; final bundle about 5 GB |
@@ -370,11 +396,11 @@ ordinary model serving.
 | Ministral 3B Q4 custom HTP build | about 25m measured | unrecorded | source about 2 GB; container/export about 3.3 GB each |
 | Ministral 8B Q4 generic GGUF-to-HTP build | 1h 26m 34s measured | 68.4 GB RSS measured | source 4.9 GiB; cache 66 GB; export 6.5 GiB; final HTP mapping failed |
 | Ministral 8B Q3 generic GGUF-to-HTP build | 1h 14m 42s measured | 84.8 GB RSS measured | source 4.0 GiB; cache 69 GB; export 6.1 GiB; HTP load succeeded |
-| Ministral 8B Q3 BFCL80 on IQ9075 | 1h 13m 44s measured | about 0.38 GB Desktop client RSS | 67/80; three strict 300-second timeouts |
-| Ministral 8B Q3 BFCL90 on IQ9075 | 1h 15m 04s measured | about 0.38 GB Desktop client RSS | 61/90; two strict 300-second timeouts |
-| Ministral 8B Q3 hospital14 on IQ9075 | 1h 02m 50s measured | about 0.12 GB Desktop client RSS | 8/14; two controlled timeouts in L2 |
+| **Ministral 8B Q3 BFCL80 on IQ9075** | 1h 13m 44s measured | about 0.38 GB Desktop client RSS | 67/80; three strict 300-second timeouts |
+| **Ministral 8B Q3 BFCL90 on IQ9075** | 1h 15m 04s measured | about 0.38 GB Desktop client RSS | 61/90; two strict 300-second timeouts |
+| **Ministral 8B Q3 hospital14 on IQ9075** | 1h 02m 50s measured | about 0.12 GB Desktop client RSS | 8/14; two controlled timeouts in L2 |
 | Qwen3 4B QAI Hub export | unrecorded | unrecorded | downloaded W4A16 checkpoint cache about 17 GB |
-| Ornith 9B CPU deployment | no NPU export | about 18 GB EVK RSS measured | official Q4_K_M file 5.63 GB |
+| **Ornith 9B CPU deployment** | no NPU export | about 18 GB EVK RSS measured | official Q4_K_M file 5.63 GB |
 
 For a fresh custom 8B W4A16 export, plan for at least 192 GB system RAM and
 roughly 200 GB free disk. Failed checkpoints, shared caches, compiler temporary
@@ -389,12 +415,8 @@ hospital arena took 17 minutes and issued many iterative requests. A persistent
 Genie service should be faster because the experimental Python bridge launches
 `genie-t2t-run` and initializes a dialog for every completion.
 
-Representative device decode rates were about 10.0 tokens/s for Nemotron W4A16,
-9.9 tokens/s for ToolACE W4A16, and 18.3 tokens/s for the direct Qwen3 W4A16
-smoke test. Ministral 8B Q3 reached only 1.91 tokens/s on its generic HTP export.
-Ornith Q4_K_M reached about 7.3 generated tokens/s with eight EVK CPU threads.
 The two Ministral 8B Q3 BFCL suites each took about 75 minutes, and its 14-case
-hospital run took another 63 minutes. Tokens per second do not predict agent
+hospital run took another 63 minutes. The token rates above do not predict agent
 completion time when a model loops, reasons for 1,000 tokens, or needs many tool
 turns.
 
