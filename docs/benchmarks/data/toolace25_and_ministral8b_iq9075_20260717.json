@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_utc": "2026-07-17",
+  "generated_utc": "2026-07-18",
   "benchmark_contract": {
     "bfcl80_case_file": "agent_arena/benchmark_selections/bfcl_v4_holdout80_nonweb_20260627.json",
     "bfcl90_case_file": "agent_arena/benchmark_selections/bfcl_v4_fresh90_nonweb_20260628.json",
@@ -63,7 +63,7 @@
     }
   },
   "ministral3_8b_instruct_2512": {
-    "status": "host_complete_device_smoke_only",
+    "status": "host_and_device_benchmarks_complete",
     "model": "mistralai/Ministral-3-8B-Instruct-2512-BF16",
     "host_bf16": {
       "compute": "RTX 5090",
@@ -93,7 +93,7 @@
       "spill_fill_bufsize_tested_bytes": 128000000
     },
     "q3_k_m_iq9075": {
-      "status": "npu_smoke_succeeded_full_benchmark_invalid",
+      "status": "npu_bfcl_and_hospital_complete",
       "source": "bartowski/mistralai_Ministral-3-8B-Instruct-2512-GGUF",
       "source_size_gib": 4.0,
       "qairt_version": "2.47.0.260601",
@@ -118,16 +118,59 @@
         "result": "did not terminate after more than 11 minutes",
         "interpretation": "native Mistral wrapper and EOS behavior are required"
       },
-      "bfcl_attempt": {
+      "bfcl_diagnostic_attempt": {
         "run_name": "ministral3_8b_q3_evk_holdout80_20260717",
         "valid_score": false,
         "completed_responses": 2,
         "failed_connection_entries": 3,
         "completed_case_latencies_s": [34.578, 64.327],
         "request_timeout_s": 90,
-        "failure": "repeated server disconnects followed by EVK SSH starvation while network ping remained responsive",
-        "partial_result_path": "agent_arena_results/bfcl_v4_100/ministral3_8b_q3_evk_holdout80_20260717/result/ministral3-8b-q3/non_live/BFCL_v4_irrelevance_result.json",
-        "scoring_policy": "infrastructure failures are not counted as wrong model answers"
+        "observed_failure": "server disconnects followed by EVK SSH starvation while network ping remained responsive",
+        "root_cause": "the bridge wrote byte-valued TimeoutExpired stdout as text, dropped the HTTP response, and triggered automatic client retries",
+        "resolution": "normalize timeout output to text and return a controlled runtime-failure tool call",
+        "partial_result_path": "agent_arena_results/bfcl_v4_100/ministral3_8b_q3_evk_holdout80_20260717/result/ministral3-8b-q3/non_live/BFCL_v4_irrelevance_result.json"
+      },
+      "bfcl_strict": {
+        "adapter": "Mistral native template with mistral_tool parsing",
+        "request_timeout_s": 300,
+        "runtime_failure_transport": "__agent_arena_runtime_failure__ reserved invalid tool call; always non-passing",
+        "bfcl80": {
+          "correct": 67,
+          "total": 80,
+          "wall_time_s": 4424,
+          "runtime_failures": 3,
+          "runtime_failure_case_ids": ["live_irrelevance_1-0-1", "irrelevance_35", "irrelevance_204"],
+          "summary_path": "agent_arena_results/bfcl_v4_100/ministral3_8b_q3_evk_holdout80_strict300_20260717/summary_ministral3-8b-q3-strict300-h80.json"
+        },
+        "bfcl90": {
+          "correct": 61,
+          "total": 90,
+          "wall_time_s": 4504,
+          "runtime_failures": 2,
+          "runtime_failure_case_ids": ["irrelevance_120", "irrelevance_209"],
+          "summary_path": "agent_arena_results/bfcl_v4_100/ministral3_8b_q3_evk_fresh90_strict300_20260717/summary_ministral3-8b-q3-strict300-f90.json"
+        },
+        "combined": {
+          "correct": 128,
+          "total": 170,
+          "accuracy": 0.7529411765,
+          "runtime_failures": 5
+        },
+        "hospital": {
+          "passed": 8,
+          "total": 14,
+          "strict_average": 0.5714285714,
+          "bounded_passed": 8,
+          "bounded_total": 9,
+          "long_workflow_passed": 0,
+          "long_workflow_total": 5,
+          "wall_time_s": 3770.5,
+          "model_timeout_requests": 2,
+          "model_timeout_case_ids": ["hospital_L2_cold_chain_robot_low"],
+          "request_timeout_s": 300,
+          "qnn_device_failures": 0,
+          "results_path": "agent_arena_results/ministral8b_q3_evk/20260717T233008Z__pydantic_hospital_logistics__ministral3_8b_q3_evk_hospital14_strict300_20260718__stock__openai-compatible/results.strict-final.json"
+        }
       }
     }
   }

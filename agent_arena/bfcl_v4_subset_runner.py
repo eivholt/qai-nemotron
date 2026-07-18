@@ -20,6 +20,9 @@ from types import SimpleNamespace
 from typing import Iterable
 
 
+RUNTIME_FAILURE_TOOL_NAME = "__agent_arena_runtime_failure__"
+
+
 ALLOCATION_PROFILES = {
     "signal100": {
         "simple_python": 12,
@@ -266,6 +269,7 @@ def make_bfcl_request_handler(
     class BfclPassthroughOpenAIHandler(openai_handler_cls):  # type: ignore[misc, valid-type]
         def _compile_tools(self, inference_data: dict, test_entry: dict) -> dict:
             inference_data = super()._compile_tools(inference_data, test_entry)
+            inference_data["agent_arena_case_id"] = test_entry.get("id")
             if native_bfcl_functions:
                 inference_data["bfcl_functions"] = deepcopy(test_entry.get("function", []))
             return inference_data
@@ -291,8 +295,13 @@ def make_bfcl_request_handler(
                 kwargs["top_p"] = top_p
             if max_tokens is not None:
                 kwargs["max_tokens"] = max_tokens
+            extra_body = {
+                "agent_arena_strict_runtime_failures": True,
+                "agent_arena_case_id": inference_data.get("agent_arena_case_id"),
+            }
             if native_bfcl_functions:
-                kwargs["extra_body"] = {"bfcl_functions": bfcl_functions}
+                extra_body["bfcl_functions"] = bfcl_functions
+            kwargs["extra_body"] = extra_body
             if len(tools) > 0:
                 kwargs["tools"] = tools
             return self.generate_with_backoff(**kwargs)
@@ -723,6 +732,39 @@ def score_files(args: argparse.Namespace) -> Iterable[Path]:
     return sorted(base.rglob("BFCL_v4_*_score.json"))
 
 
+def runtime_failure_rows(args: argparse.Namespace) -> list[dict]:
+    model_dir_name = args.model_id.replace("/", "_")
+    base = result_dir(args) / model_dir_name
+    failures: list[dict] = []
+    if not base.exists():
+        return failures
+    for path in sorted(base.rglob("BFCL_v4_*_result.json")):
+        for row in read_jsonl(path):
+            result = row.get("result")
+            if RUNTIME_FAILURE_TOOL_NAME not in json.dumps(result, sort_keys=True):
+                continue
+            status = "runtime_failure"
+            if isinstance(result, list):
+                for item in result:
+                    if not isinstance(item, dict) or RUNTIME_FAILURE_TOOL_NAME not in item:
+                        continue
+                    try:
+                        detail = json.loads(item[RUNTIME_FAILURE_TOOL_NAME])
+                    except (TypeError, json.JSONDecodeError):
+                        detail = {}
+                    status = str(detail.get("status", status))
+                    break
+            failures.append(
+                {
+                    "id": row.get("id"),
+                    "status": status,
+                    "latency": row.get("latency"),
+                    "result_file": str(path),
+                }
+            )
+    return failures
+
+
 def summarize(args: argparse.Namespace) -> dict:
     root = run_root(args)
     model_id = args.model_id.replace("/", "_")
@@ -771,6 +813,7 @@ def summarize(args: argparse.Namespace) -> dict:
             }
         )
 
+    runtime_failures = runtime_failure_rows(args)
     summary = {
         "model_id": args.model_id,
         "run_root": str(root),
@@ -781,6 +824,11 @@ def summarize(args: argparse.Namespace) -> dict:
         },
         "groups": group_rows,
         "categories": sorted(category_rows, key=lambda row: (row["group"], row["category"])),
+        "runtime_failures": {
+            "count": len(runtime_failures),
+            "cases": runtime_failures,
+            "scoring": "reserved invalid tool calls; always non-passing",
+        },
     }
     root.mkdir(parents=True, exist_ok=True)
     summary_path = root / f"summary_{model_id}.json"
@@ -803,6 +851,9 @@ def write_markdown_summary(path: Path, summary: dict) -> None:
         "",
         f"Overall: {format_count(summary['overall']['correct'])}/{summary['overall']['total']} "
         f"({format_pct(summary['overall']['accuracy'])})",
+        "",
+        f"Runtime failures: {summary['runtime_failures']['count']} "
+        "(encoded as reserved invalid tool calls and counted as non-passing).",
         "",
         "## Groups",
         "",

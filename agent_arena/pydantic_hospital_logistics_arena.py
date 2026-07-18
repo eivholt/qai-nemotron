@@ -462,10 +462,10 @@ def classify_failure(score: dict[str, Any], exception: str, server_requests: lis
         return "infrastructure_error"
     if "Failed to parse tool call arguments as JSON" in exception:
         return "protocol_error"
-    if exception:
-        return "agent_exception"
     if any(item.get("timed_out") for item in server_requests):
         return "model_timeout"
+    if exception:
+        return "agent_exception"
     if any(not item.get("parsed_ok") for item in server_requests):
         return "protocol_error"
     if score.get("missing"):

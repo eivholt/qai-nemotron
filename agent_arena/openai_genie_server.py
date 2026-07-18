@@ -32,6 +32,7 @@ from agent_arena.tool_arena import extract_action
 
 
 REQUEST_LOG: list[dict[str, Any]] = []
+RUNTIME_FAILURE_TOOL_NAME = "__agent_arena_runtime_failure__"
 
 def genie_runtime_failure_status(stdout: str) -> str:
     context_markers = (
@@ -3622,6 +3623,29 @@ class GenieOpenAIServer(ThreadingHTTPServer):
             )
         if shutil.which("genie-t2t-run", path=qairt_env()["PATH"]) is None:
             raise FileNotFoundError("genie-t2t-run not found in QAIRT PATH")
+        if self.args.genie_abort_ms < 0:
+            raise ValueError("--genie-abort-ms cannot be negative")
+        if (
+            self.args.genie_abort_ms
+            and self.args.genie_abort_ms >= self.args.timeout_s * 1000
+        ):
+            raise ValueError("--genie-abort-ms must be lower than --timeout-s")
+
+    def genie_command(self, prompt_path: Path, profile_path: Path) -> list[str]:
+        command = [
+            "genie-t2t-run",
+            "-c",
+            str(self.config_path),
+            "--prompt_file",
+            str(prompt_path),
+            "--profile",
+            str(profile_path),
+        ]
+        if self.args.genie_abort_ms:
+            command.extend(
+                ["--action", "ABORT", "--sleep", str(self.args.genie_abort_ms)]
+            )
+        return command
 
     def payload_has_tool_result(self, payload: dict[str, Any]) -> bool:
         messages = payload.get("messages", [])
@@ -3729,6 +3753,7 @@ class GenieOpenAIServer(ThreadingHTTPServer):
             "request_index": self.counter,
             "request_id": request_id,
             "model": self.args.model_name,
+            "case_id": payload.get("agent_arena_case_id"),
             "mode": self.args.mode,
             "parser": self.args.parser,
             "elapsed_s": 0.0,
@@ -3777,6 +3802,7 @@ class GenieOpenAIServer(ThreadingHTTPServer):
                 "parsed_ok": record["parsed_ok"],
                 "elapsed_s": record["elapsed_s"],
                 "timed_out": record["timed_out"],
+                "generation_aborted": record.get("generation_aborted", False),
             },
         }
 
@@ -3790,15 +3816,7 @@ class GenieOpenAIServer(ThreadingHTTPServer):
         timed_out = False
         try:
             proc = subprocess.run(
-                [
-                    "genie-t2t-run",
-                    "-c",
-                    str(self.config_path),
-                    "--prompt_file",
-                    str(prompt_path),
-                    "--profile",
-                    str(profile_path),
-                ],
+                self.genie_command(prompt_path, profile_path),
                 cwd=self.bundle,
                 env=qairt_env(),
                 text=True,
@@ -3810,6 +3828,8 @@ class GenieOpenAIServer(ThreadingHTTPServer):
             returncode = proc.returncode
         except subprocess.TimeoutExpired as exc:
             stdout = exc.stdout or ""
+            if isinstance(stdout, bytes):
+                stdout = stdout.decode(errors="replace")
             returncode = -9
             timed_out = True
         elapsed_s = time.monotonic() - started
@@ -3929,15 +3949,7 @@ class GenieOpenAIServer(ThreadingHTTPServer):
         timed_out = False
         try:
             proc = subprocess.run(
-                [
-                    "genie-t2t-run",
-                    "-c",
-                    str(self.config_path),
-                    "--prompt_file",
-                    str(prompt_path),
-                    "--profile",
-                    str(profile_path),
-                ],
+                self.genie_command(prompt_path, profile_path),
                 cwd=self.bundle,
                 env=qairt_env(),
                 text=True,
@@ -3949,17 +3961,41 @@ class GenieOpenAIServer(ThreadingHTTPServer):
             returncode = proc.returncode
         except subprocess.TimeoutExpired as exc:
             stdout = exc.stdout or ""
+            if isinstance(stdout, bytes):
+                stdout = stdout.decode(errors="replace")
             returncode = -9
             timed_out = True
         elapsed_s = time.monotonic() - started
         log_path.write_text(stdout)
         raw = extract_genie_answer(stdout)
+        generation_aborted = "Query successfully aborted" in stdout
         runtime_status = "timeout" if timed_out else genie_runtime_failure_status(stdout)
         if runtime_status:
+            strict_runtime_failure = bool(
+                payload.get("agent_arena_strict_runtime_failures")
+            )
+            runtime_message: dict[str, Any] = {
+                "role": "assistant",
+                "content": "",
+            }
+            runtime_finish_reason = "stop"
+            runtime_parsed_action = None
+            if strict_runtime_failure:
+                runtime_parsed = {
+                    "type": "tool",
+                    "id": "runtime_failure",
+                    "name": RUNTIME_FAILURE_TOOL_NAME,
+                    "arguments": {"status": runtime_status},
+                }
+                runtime_message, runtime_finish_reason = openai_message(
+                    runtime_parsed, ""
+                )
+                runtime_parsed_action = self.parsed_action_summary(runtime_parsed)
             record = {
                 "request_index": self.counter,
                 "request_id": request_id,
                 "model": self.args.model_name,
+                "case_id": payload.get("agent_arena_case_id"),
                 "mode": self.args.mode,
                 "parser": self.args.parser,
                 "multi_tool_policy": self.args.multi_tool_policy,
@@ -3967,10 +4003,12 @@ class GenieOpenAIServer(ThreadingHTTPServer):
                 "elapsed_s": round(elapsed_s, 3),
                 "returncode": returncode,
                 "timed_out": timed_out,
+                "generation_aborted": generation_aborted,
                 "parse_status": runtime_status,
                 "parsed_ok": False,
-                "parsed_action": None,
-                "finish_reason": "stop",
+                "parsed_action": runtime_parsed_action,
+                "finish_reason": runtime_finish_reason,
+                "strict_runtime_failure": strict_runtime_failure,
                 "raw_answer": raw,
                 "final_answer": "",
                 "tool_guard": None,
@@ -3988,8 +4026,8 @@ class GenieOpenAIServer(ThreadingHTTPServer):
             completion_tokens = len(raw) // 4
             return self.completion_payload(
                 request_id,
-                {"role": "assistant", "content": ""},
-                "stop",
+                runtime_message,
+                runtime_finish_reason,
                 prompt_tokens,
                 completion_tokens,
                 record,
@@ -4057,6 +4095,8 @@ class GenieOpenAIServer(ThreadingHTTPServer):
             if supported_guard_info and supported_guard_info.get("decision") == "reject":
                 parse_status = f"{parse_status}_supported_rejected"
         parsed = self.apply_multi_tool_policy(parsed, payload)
+        if generation_aborted:
+            parse_status = f"{parse_status}_aborted"
         guard_info = None
         if (
             self.args.parser in {"nemotron_bfcl_official_strict_schema_guarded", "nemotron_bfcl_official_user_selective_schema_guarded"}
@@ -4072,11 +4112,14 @@ class GenieOpenAIServer(ThreadingHTTPServer):
             else:
                 parse_status = f"{parse_status}_guard_allowed"
         message, finish_reason = openai_message(parsed, answer or raw)
+        if generation_aborted:
+            finish_reason = "length"
         parsed_action = self.parsed_action_summary(parsed)
         record = {
             "request_index": self.counter,
             "request_id": request_id,
             "model": self.args.model_name,
+            "case_id": payload.get("agent_arena_case_id"),
             "mode": self.args.mode,
             "parser": self.args.parser,
             "multi_tool_policy": self.args.multi_tool_policy,
@@ -4084,6 +4127,7 @@ class GenieOpenAIServer(ThreadingHTTPServer):
             "elapsed_s": round(elapsed_s, 3),
             "returncode": returncode,
             "timed_out": timed_out,
+            "generation_aborted": generation_aborted,
             "parse_status": "timeout" if timed_out else parse_status,
             "parsed_ok": bool(parsed) and not timed_out,
             "parsed_action": parsed_action,
@@ -4178,6 +4222,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8001)
     parser.add_argument("--timeout-s", type=int, default=300)
+    parser.add_argument("--genie-abort-ms", type=int, default=0)
     parser.add_argument("--config-file", default="genie_config.json")
     parser.add_argument(
         "--parser",

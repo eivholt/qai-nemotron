@@ -42,7 +42,7 @@ Scoring uses predefined behavior, not an LLM judge. Missing calls, wrong argumen
 | Qwen3-4B-Instruct-2507 | 4B | QAI Hub Models W4A16 Genie export, HTP/NPU | BF16 Transformers, RTX 5090 | Qwen native `<tools>`, `<tool_call>`, `<tool_response>` |
 | DeepReinforce Ornith-1.0-9B | 9B | Q4_K_M GGUF in llama.cpp, CPU fallback | BF16 vLLM, RTX 5090 | `qwen3_xml` tool parser plus `qwen3` reasoning parser |
 | Team-ACE ToolACE-2.5-Llama-3.1-8B | 8B | Custom W4A16 Genie bundle, HTP/NPU | BF16 vLLM, RTX 5090 | Model-card Python calls on EVK; bundled Llama JSON or Python calls on host |
-| Mistral Ministral-3-8B-Instruct-2512 | 8B | Q3_K_M generic GGUF-to-HTP export, QAIRT 2.47; NPU smoke validated, full benchmark pending runtime recovery | BF16 vLLM, RTX 5090 | Mistral native tool template/parser |
+| Mistral Ministral-3-8B-Instruct-2512 | 8B | Q3_K_M generic GGUF-to-HTP export, QAIRT 2.47; NPU BFCL and hospital complete | BF16 vLLM, RTX 5090 | Mistral native tool template/parser |
 | Salesforce Llama-xLAM-2-8b-fc-r | 8B | Not exported; screened out by host results | BF16 vLLM, RTX 5090 | xLAM native parser |
 | MadeAgents Hammer2.1-7b | 7B | Not exported; screened out by host results | BF16 vLLM, RTX 5090 | xLAM-compatible JSON-array parser |
 | Mistral-7B-Instruct-v0.3 | 7B | No compatible public IQ9075 binary | BF16 vLLM, RTX 5090 | Mistral parser |
@@ -81,6 +81,7 @@ All scores below use exactly the two fixed non-web selections. `Combined` is a c
 | Ministral 3.3B Q4, native adapter | IQ9075 HTP | 66/80 (82.5%) | 66/90 (73.3%) | 132/170 (77.6%) | Valid EVK deployment |
 | xLAM 2 8B BF16, native parser | RTX 5090 | 68/80 (85.0%) | 62/90 (68.9%) | 130/170 (76.5%) | Valid host reference; CC-BY-NC-4.0 |
 | Ministral 3.3B BF16, native vLLM | RTX 5090 | 66/80 (82.5%) | 64/90 (71.1%) | 130/170 (76.5%) | Valid host reference |
+| Ministral 8B Q3, native adapter | IQ9075 HTP | 67/80 (83.8%) | 61/90 (67.8%) | 128/170 (75.3%) | Valid strict run; five 300-second timeouts counted as failures |
 | Hammer 2.1 7B BF16, xLAM parser | RTX 5090 | 66/80 (82.5%) | 57/90 (63.3%) | 123/170 (72.4%) | Valid host reference; CC-BY-NC-4.0 |
 | Nemotron Nano 8B BF16, guarded native adapter | RTX 5090 | 59/80 (73.8%) | 61/90 (67.8%) | 120/170 (70.6%) | Valid host reference |
 | Qwen3 4B W4A16, native adapter, deterministic | IQ9075 HTP | 58/80 (72.5%) | 58/90 (64.4%) | 116/170 (68.2%) | Best combined EVK sampler; same weights/export |
@@ -100,7 +101,7 @@ Several conclusions survive both selections:
 
 1. Ornith is the strongest host BFCL model tested. Its EVK Q4_K_M CPU path retains 145/170 versus 149/170 on host BF16, but it is a CPU fallback rather than an NPU success.
 2. Qwen3 is very strong when its native tool template is used. Switching the EVK bundle from export-default sampling to deterministic decoding raises BFCL80 by seven cases but lowers BFCL90 by two, for a net 5/170 gain. The best EVK row still trails host BF16 by 15.0 points on BFCL80 and 13.3 points on BFCL90, so sampling explains only part of the deployment-path delta.
-3. Ministral is unusually stable across host and EVK: its EVK result matches or slightly exceeds the host result. The smaller parameter count is not a disadvantage in this tool-calling workload.
+3. Ministral 3B is unusually stable across host and EVK: its Q4 HTP result slightly exceeds its BF16 host result. The 8B Q3 HTP export reaches 128/170, close to the 3B rows, but its 1.91-token/s decode rate and long-tail timeouts make it a compatibility result rather than a practical upgrade.
 4. Stock Llama performs much better through the EVK Qualcomm adapter than through the tested host vLLM path. That reversal is strong evidence that parser/template fit can outweigh quantization.
 5. Nemotron's guarded adapter improved dramatically over the earliest runs, but reasoning-on was lower on both fixed sets: 47 versus 53 on BFCL80 and 41 versus 45 on BFCL90. The independent fresh90 set also prevents claiming the optimized 63/90 signal-suite result as a general score.
 6. ToolACE's custom W4A16 export is usable on HTP but falls from 140/170 with the host Pythonic path to 108/170 on device. Its EVK Pythonic adapter still beat the same quantized checkpoint's Llama JSON probe, confirming that native protocol fit matters after export too.
@@ -117,7 +118,9 @@ The finalized strict host/EVK table is:
 | Ministral 3.3B BF16, native vLLM | 9/14 | 0.643 | Strong bounded choices; long workflows remain hard |
 | Ornith 9B BF16, official vLLM parsers | 8/14 | 0.640 | One excess bounded action; incomplete long workflows |
 | Llama 3.1 8B BF16, corrected rescore | 8/14 | 0.601 | Two apparent passes were removed for excess calls |
+| Ministral 8B BF16, native vLLM | 8/14 | 0.655 | Host reference for the Q3 device export |
 | Mistral 7B v0.3 BF16 | 8/14 | 0.571 | Useful bounded tool behavior; not available on IQ9075 NPU |
+| Ministral 8B Q3, IQ9075 HTP | 8/14 | 0.571 | Passed 8/9 bounded cases; no long strict pass; two controlled L2 timeouts |
 | Nemotron Nano 8B BF16 | 6/14 | 0.429 | More wrong/excess actions |
 | Hammer 2.1 7B BF16, xLAM parser | 3/14 | 0.214 | Extra bounded calls and premature completion after the first observation |
 | Llama 3.2 3B BF16, corrected rescore | 1/14 | 0.071 | Original 9/14 was inflated by ignored excess, retry, and ordering errors |
@@ -131,7 +134,9 @@ The finalized strict host/EVK table is:
 | Nemotron W4A16, thinking on | 4/14 | 0.286 | Four bounded passes; four context-exhaustion outcomes; below thinking-off |
 | ToolACE 2.5 W4A16, IQ9075 HTP | 6/14 | 0.429 | Native Pythonic adapter; useful bounded behavior, below its 10/14 BF16 host reference |
 
-The bounded-versus-long split is more useful than a single average. Ministral EVK passed all nine bounded cases with one call each, as did deterministic Qwen3 and Ornith CPU. Stock Llama passed four; Nemotron passed five with thinking off and four with thinking on. The latter two paths frequently expanded a correct-looking start into duplicate or unrelated calls. Stock Llama reached context exhaustion in six cases after model-loop overcalling; both Nemotron modes reached it in four. These are model/agent trajectory failures, not QNN device-creation failures.
+The bounded-versus-long split is more useful than a single average. Ministral 3B EVK passed all nine bounded cases with one call each, as did deterministic Qwen3 and Ornith CPU. Ministral 8B Q3 passed eight of nine bounded cases and none of the five long workflows. Stock Llama passed four; Nemotron passed five with thinking off and four with thinking on. The latter two paths frequently expanded a correct-looking start into duplicate or unrelated calls.
+
+The full workflows currently expose both parameterized tools and the simplified `*_pending_*` wrappers used by bounded cases. Ministral 8B Q3 selected wrappers in L0 and L4; they remain strict missing/excess failures. This shared tool clutter preserves cross-model comparability, but the next benchmark revision should hide those convenience tools and rerun every model rather than add a Q3-specific alias. Stock Llama reached context exhaustion in six cases after model-loop overcalling; both Nemotron modes reached it in four. These are model/agent trajectory failures, not QNN device-creation failures.
 
 Ornith EVK passed all nine bounded cases, then scored 0.875, 0.000, 0.571, 0.200, and 0.500 on L0-L4 without a strict pass; failures included excess checks, forbidden carrier choice, non-completion, and malformed tool JSON. The longer workflows expose another capability: remaining disciplined across repeated observations and tool results without expanding into every plausible action. None of the small local models should be assumed to manage an unrestricted hospital workflow merely because it scores well on single-turn BFCL.
 
@@ -231,13 +236,19 @@ QAIRT 2.47 successfully converted both Q4_K_M and Q3_K_M GGUF variants into nine
 
 The Q3 package loaded through a side-by-side QAIRT 2.47/Genie 1.18 runtime and returned `OK.` for the native Mistral prompt `<s>[INST]Reply with exactly OK.[/INST]`. The profile confirmed QnnHtp, 15.3 prompt tokens/s, 1.91 generated tokens/s, and 4.39 seconds of dialog initialization. The same model without its native wrapper did not terminate after eleven minutes, showing how template and EOS behavior can masquerade as poor accelerator performance.
 
-The first BFCL pass is not a valid score. Two irrelevance cases completed in 34.6 and 64.3 seconds, then requests repeatedly disconnected after 90-second inference timeouts and the board stopped accepting SSH sessions while still answering network pings. The client was stopped after three failed cases. These entries are retained as infrastructure diagnostics, not marked as wrong model answers. A clean full-device score requires a runtime recovery or reboot and a serving path that can terminate a wedged Genie/QNN request without destabilizing the board.
+The first BFCL pass was invalid, but the model and QNN runtime had not crashed. When `genie-t2t-run` exceeded the original 90-second limit, `subprocess.TimeoutExpired.stdout` arrived as bytes even though text mode was requested. The experimental bridge then tried to write those bytes as text, raised another exception, and dropped the HTTP connection. OpenAI client retries launched more long requests, creating the apparent SSH starvation. Normalizing the captured output to text made timeouts return as controlled HTTP responses.
+
+That fix exposed a scoring trap: BFCL irrelevance rewards a genuine decision not to call a function, so an empty transport-timeout answer could accidentally pass. Strict benchmark requests now encode any timeout or runtime failure as the reserved invalid call `__agent_arena_runtime_failure__`. It cannot match an expected tool and always scores as a failure.
+
+The recovered Q3 runs used natural EOS and a 300-second hard timeout. BFCL80 scored 67/80 in 1h 13m 44s with three strict timeouts; BFCL90 scored 61/90 in 1h 15m 04s with two. The combined result is 128/170 (75.3%), and all five runtime failures are included as non-passes. The raw summaries are `agent_arena_results/bfcl_v4_100/ministral3_8b_q3_evk_holdout80_strict300_20260717/summary_ministral3-8b-q3-strict300-h80.json` and `agent_arena_results/bfcl_v4_100/ministral3_8b_q3_evk_fresh90_strict300_20260717/summary_ministral3-8b-q3-strict300-f90.json`.
+
+The strict hospital run scored 8/14 with a 0.571 average in 1h 02m 50s. It matched the BF16 host reference on strict pass count but not partial-credit average (0.655 host). Eight of nine bounded cases passed; all five long workflows failed. L2 contained two controlled 300-second generation timeouts, classified as `model_timeout`, with no QNN/device failure. The strict result is `agent_arena_results/ministral8b_q3_evk/20260717T233008Z__pydantic_hospital_logistics__ministral3_8b_q3_evk_hospital14_strict300_20260718__stock__openai-compatible/results.strict-final.json`.
 
 The builds were expensive enough to record: Q4 took 1h 26m 34s and peaked at 68.4 GB RSS, while Q3 took 1h 14m 42s and peaked at 84.8 GB RSS. Their work directories consumed about 66-69 GB before the final 6.1-6.5 GiB exports. The Q3 source came from a community GGUF because the publisher's repository did not provide that quantization.
 
 ## Practical Recommendations
 
-For bounded function selection on IQ9075 today, Ministral's custom Q4 HTP bundle remains the strongest accelerator-backed NPU row across both fixed sets. Qwen3 W4A16 is a credible second modern option and has a reproducible QAI Hub export path. Stock Llama remains useful when the Qualcomm tool format is matched. Nemotron remains valuable for reasoning-oriented experiments and demonstrates how much serving interpretation can recover, but its strongest guarded scores should always be accompanied by fresh holdout results.
+For bounded function selection on IQ9075 today, Ministral 3B's custom Q4 HTP bundle remains the strongest accelerator-backed NPU row across both fixed sets. Ministral 8B Q3 is close in BFCL quality and matches its host strict hospital pass count, but it is much slower, passes no long workflow, and is less predictable. Qwen3 W4A16 is a credible modern option with a reproducible QAI Hub export path. Stock Llama remains useful when its Llama 3 tool format is matched. Nemotron remains valuable for reasoning-oriented experiments and demonstrates how much serving interpretation can recover, but its strongest guarded scores should always be accompanied by fresh holdout results.
 
 Ornith is the strongest host checkpoint tested and an excellent architecture-support target for Qualcomm. The GGUF CPU fallback proves functional compatibility and correct tool parsing, but its latency, CPU saturation, and memory footprint make it a reference/engineering path rather than the preferred IQ9075 production deployment.
 

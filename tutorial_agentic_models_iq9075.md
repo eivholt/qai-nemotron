@@ -114,6 +114,7 @@ native adapter; the semantic task and official scorer remain unchanged.
 | Ministral 8B Instruct BF16, RTX 5090 | 69/80 | 69/90 | **138/170 (81.2%)** |
 | Ministral 3B Q4, IQ9075 HTP | 66/80 | 66/90 | **132/170 (77.6%)** |
 | Ministral 3B BF16, RTX 5090 | 66/80 | 64/90 | **130/170 (76.5%)** |
+| Ministral 8B Q3, IQ9075 HTP | 67/80 | 61/90 | **128/170 (75.3%)** |
 | Nemotron Nano BF16, RTX 5090 | 59/80 | 61/90 | **120/170 (70.6%)** |
 | Qwen3 4B W4A16 deterministic, IQ9075 HTP | 58/80 | 58/90 | **116/170 (68.2%)** |
 | Stock Llama 3.1 W4A16, IQ9075 HTP | 55/80 | 53/90 | **108/170 (63.5%)** |
@@ -136,21 +137,27 @@ xychart-beta
 ```mermaid
 xychart-beta
     title "IQ9075 BFCL results"
-    x-axis ["Orn-CPU", "M3-NPU", "Qwen-NPU", "L3-NPU", "ACE-NPU", "Nemo-Off", "Nemo-On"]
+    x-axis ["Orn-CPU", "M3-NPU", "M8-Q3", "Qwen-NPU", "L3-NPU", "ACE-NPU", "Nemo-Off", "Nemo-On"]
     y-axis "Correct of 170" 0 --> 170
-    bar [145, 132, 116, 108, 108, 98, 88]
+    bar [145, 132, 128, 116, 108, 108, 98, 88]
 ```
+
+Runtime failures are never treated as empty model answers. The Ministral 8B Q3
+row includes five requests that reached the 300-second hard timeout. All five
+are recorded as non-passing calls, even in BFCL irrelevance categories where a
+genuine decision not to call a function can be correct.
 
 The result that changed my model-selection assumptions was Ministral 3B. It is
 smaller than the 8B models, yet its native Mistral tool protocol is disciplined
 and stable across BF16 host and Q4 HTP deployment. Parameter count alone is a
 poor predictor of agentic reliability.
 
-ToolACE shows the opposite deployment lesson. Its host checkpoint is excellent,
-but its custom W4A16 IQ9075 export drops from 140/170 with native Python calls to
-108/170. The same EVK model scored only 49/80 when forced through Llama JSON, so
-the native Pythonic protocol remains the correct device adapter even though
-quantized behavior is weaker.
+ToolACE exposes two legitimate host protocols. Its bundled Llama JSON path is
+best for this BFCL slice at 146/170. Its model-card Pythonic path scores 140/170
+on BFCL but leads the hospital arena at 10/14. The custom W4A16 IQ9075 export
+scores 108/170 with the Pythonic adapter and only 49/80 in the device Llama JSON
+probe. Protocol choice therefore remains workload- and deployment-specific;
+the device result is not directly interchangeable with the best host row.
 
 Nemotron improved substantially after adopting NVIDIA/BFCL-style schemas,
 native placement, final-answer splitting, and conservative parsing. The fresh
@@ -164,6 +171,12 @@ strength in math, coding, or scientific reasoning.
 The hard slice is stricter than conversational evaluation: a correct action plus
 an unnecessary action is still a failure.
 
+`Strict pass` requires every expected call and argument, with no missing,
+forbidden, duplicate, excess, unexecuted, or out-of-order action. `Average` is
+the mean 0-to-1 ledger score across the 14 cases. It gives partial credit for
+satisfied requirements, then subtracts the same strict failure penalties. It is
+useful for diagnosing near misses, but strict pass is the operational result.
+
 | Model and runtime | Strict pass | Average |
 |---|---:|---:|
 | ToolACE 2.5 BF16, native Pythonic | 10/14 | 0.789 |
@@ -173,12 +186,25 @@ an unnecessary action is still a failure.
 | Ornith 9B Q4_K_M, IQ9075 CPU | 9/14 | 0.796 |
 | Ministral 3B Q4, IQ9075 HTP | 9/14 | 0.643 |
 | Qwen3 4B W4A16 deterministic, IQ9075 HTP | 9/14 | 0.643 |
+| Ministral 8B BF16, RTX 5090 | 8/14 | 0.655 |
 | Llama 3.1 8B BF16 | 8/14 | 0.601 |
+| Ministral 8B Q3, IQ9075 HTP | 8/14 | 0.571 |
 | Nemotron Nano BF16 | 6/14 | 0.429 |
 | ToolACE 2.5 W4A16, IQ9075 HTP | 6/14 | 0.429 |
 | Nemotron W4A16 thinking off, IQ9075 HTP | 5/14 | 0.357 |
 | Stock Llama W4A16, IQ9075 HTP | 4/14 | 0.286 |
 | Nemotron W4A16 thinking on, IQ9075 HTP | 4/14 | 0.286 |
+
+Ministral 8B Q3 matches its BF16 host reference at 8/14 strict passes, although
+its average falls from 0.655 to 0.571. It passes eight of nine bounded decisions
+but none of the five long workflows. The device run takes 1h 02m 50s and includes
+two controlled 300-second generation timeouts in L2; neither is a QNN failure.
+
+One shared-suite caveat is that the long workflows also expose simplified
+`*_pending_*` convenience tools intended for bounded cases. Q3 selected those
+wrappers in L0 and L4. I retain the strict failures for comparability and do not
+alias the calls. A future revision should hide the convenience tools and rerun
+every model rather than repair one model's row.
 
 No local model reliably completed all five long workflows. The practical design
 response is not to hide failures with permissive parsing. Keep each decision
@@ -191,11 +217,16 @@ Each model was trained to emit a particular wire format:
 
 - Ministral uses Mistral's native tool tokens and parser.
 - Qwen3 uses `<tools>`, `<tool_call>`, and `<tool_response>` blocks.
-- ToolACE's model-card path emits Python calls such as
-  `[reserve_elevator(elevator_id="E2")]`.
-- Stock Llama works best on this EVK through Qualcomm's tool interpretation.
+- ToolACE supports both its bundled Llama JSON path and model-card Python calls
+  such as `[reserve_elevator(elevator_id="E2")]`.
+- Stock Llama uses the bridge's Llama 3 JSON renderer and parser.
 - Nemotron uses NVIDIA/BFCL-style function schemas and may separate
   `<think>...</think>` reasoning from the final executable section.
+
+Adapter names such as `mistral_tool` and `llama3_json` refer to project code in
+`agent_arena/openai_genie_server.py`; they are not built-in Genie tool parsers.
+Genie runs the rendered prompt and returns model text. The bridge is responsible
+for turning that text into OpenAI-compatible tool calls.
 
 Final-answer splitting means the server preserves reasoning as reasoning, but
 parses tool calls only from the section after the closed `<think>` block. Without
@@ -263,13 +294,27 @@ only 1.91 tokens/s, with 15.3 prompt tokens/s and 4.39 seconds of dialog
 initialization per CLI request. This is an NPU compatibility success, not yet an
 efficient production deployment.
 
-The first BFCL attempt did not produce a valid score. Two cases completed in
-34.6 and 64.3 seconds, after which requests repeatedly disconnected at the
-90-second timeout and the board stopped accepting SSH sessions while still
-answering network pings. I stopped the client after three failed entries and
-classified the run as an infrastructure failure rather than three wrong model
-answers. A full Q3 quality comparison still requires a clean runtime recovery
-and a serving path that can terminate a wedged Genie/QNN request safely.
+The first BFCL attempt looked like a QNN stability failure, but the fault was in
+the experimental HTTP bridge. When `genie-t2t-run` exceeded the 90-second limit,
+Python returned captured output as bytes. The bridge tried to write those bytes
+as text, raised another exception, and dropped the HTTP connection instead of
+returning a timeout response. Automatic client retries then launched more long
+requests. The resulting load also made SSH appear unavailable even though the
+model process had not crashed.
+
+Normalizing timeout output to text fixed the disconnect and exposed a second
+benchmarking trap. BFCL irrelevance cases reward a model for making no function
+call, so a transport timeout represented as an empty answer could accidentally
+receive credit. The strict runner now converts infrastructure failures into a
+reserved invalid tool call. It cannot match any expected function and therefore
+always scores as a failure.
+
+With natural EOS, a 300-second hard timeout, and strict failure accounting, Q3
+completed BFCL80 at 67/80 and BFCL90 at 61/90: 128/170, or 75.3%. Three BFCL80
+requests and two BFCL90 requests timed out; all five were counted as failures.
+The suites took 1h 13m 44s and 1h 15m 04s respectively. The result is only four
+calls behind Ministral 3B Q4 on HTP, but it is much slower and remains below the
+8B BF16 host reference at 138/170.
 
 A raw `Say OK.` prompt without Mistral's native chat wrapper ran for more than
 11 minutes and did not terminate. The exact native `[INST]...[/INST]` request
@@ -312,6 +357,9 @@ ordinary model serving.
 | Ministral 3B Q4 custom HTP build | about 25m measured | unrecorded | source about 2 GB; container/export about 3.3 GB each |
 | Ministral 8B Q4 generic GGUF-to-HTP build | 1h 26m 34s measured | 68.4 GB RSS measured | source 4.9 GiB; cache 66 GB; export 6.5 GiB; final HTP mapping failed |
 | Ministral 8B Q3 generic GGUF-to-HTP build | 1h 14m 42s measured | 84.8 GB RSS measured | source 4.0 GiB; cache 69 GB; export 6.1 GiB; HTP load succeeded |
+| Ministral 8B Q3 BFCL80 on IQ9075 | 1h 13m 44s measured | about 0.38 GB host-client RSS | 67/80; three strict 300-second timeouts |
+| Ministral 8B Q3 BFCL90 on IQ9075 | 1h 15m 04s measured | about 0.38 GB host-client RSS | 61/90; two strict 300-second timeouts |
+| Ministral 8B Q3 hospital14 on IQ9075 | 1h 02m 50s measured | about 0.12 GB host-client RSS | 8/14; two controlled timeouts in L2 |
 | Qwen3 4B QAI Hub export | unrecorded | unrecorded | downloaded W4A16 checkpoint cache about 17 GB |
 | Ornith 9B CPU deployment | no NPU export | about 18 GB EVK RSS measured | official Q4_K_M file 5.63 GB |
 
@@ -332,8 +380,10 @@ Representative device decode rates were about 10.0 tokens/s for Nemotron W4A16,
 9.9 tokens/s for ToolACE W4A16, and 18.3 tokens/s for the direct Qwen3 W4A16
 smoke test. Ministral 8B Q3 reached only 1.91 tokens/s on its generic HTP export.
 Ornith Q4_K_M reached about 7.3 generated tokens/s with eight EVK CPU threads.
-Tokens per second do not predict agent completion time when a model
-loops, reasons for 1,000 tokens, or needs many tool turns.
+The two Ministral 8B Q3 BFCL suites each took about 75 minutes, and its 14-case
+hospital run took another 63 minutes. Tokens per second do not predict agent
+completion time when a model loops, reasons for 1,000 tokens, or needs many tool
+turns.
 
 ## Hosting lessons
 
@@ -359,11 +409,13 @@ is a failed agent trajectory and remains a non-pass.
 ## Practical recommendations
 
 For accelerator-backed bounded tool selection today, Ministral 3B is the most
-stable tested IQ9075 model. Qwen3 4B is a strong modern QAI Hub option when its
-native template and actual Genie sampler are used. Stock Llama is useful with
-Qualcomm's format. Nemotron remains interesting for reasoning and demonstrates
-how much correct serving interpretation matters, but reasoning on is not the
-best default for short function selection.
+stable tested IQ9075 model. Ministral 8B Q3 achieves a similar BFCL score, but
+its 1.91-token/s decode rate and long-tail timeouts make it a compatibility
+demonstration rather than a practical upgrade. Qwen3 4B is a strong modern QAI
+Hub option when its native template and actual Genie sampler are used. Stock
+Llama is useful with its Llama 3 adapter. Nemotron remains interesting for
+reasoning and demonstrates how much correct serving interpretation matters, but
+reasoning on is not the best default for short function selection.
 
 Ornith is the strongest overall checkpoint tested and retains most of its host
 score after Q4 quantization, but current architecture support leaves it on the
