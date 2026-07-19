@@ -486,9 +486,7 @@ pattern appeared in the [Ministral reasoning variants](#ministral-reasoning-vari
 Ornith is the strongest overall checkpoint tested and retains most of its Desktop
 score after Q4 quantization, but current architecture support leaves it on the
 EVK CPU. The [architecture and threading notes](#ornith-npu-blocker-and-cpu-fallback)
-explain both the NPU blocker and the eight-core workaround. That makes it an
-informative Qualcomm enablement target rather than the preferred low-power
-deployment.
+explain both the NPU blocker and the eight-core workaround. Maybe future Qualcomm support can make this a practical option?
 
 For the hospital demo, expose a focused set of tools for each decision, let the
 model take one next step after each observation, and keep deterministic policy
@@ -762,9 +760,11 @@ The official Q4_K_M GGUF does run through a native ARM llama.cpp build. GGUF is
 not inherently single-core: `-t 8 -tb 8` uses all eight EVK cores. The first
 one-core `htop` capture came from conservative launch defaults, not a file
 format limit. The corrected path reached about 7.3 generated tokens/s and used
-roughly 18 GB RSS. The before/after evidence is in the
-[single-core capture](resources/GGUF-single-core.png) and
-[eight-core capture](resources/GGUF-multi-core.png).
+roughly 18 GB RSS.
+
+![single-core capture](resources/GGUF-single-core.png)
+
+![single-core capture](resources/GGUF-multi-core.png)
 
 #### Mistral 7B public binary mismatch
 
@@ -777,8 +777,7 @@ profile failed with `QNN_CONTEXT_ERROR_CREATE_FROM_BINARY` before model
 execution, so copying the same binaries to the physical board would not help.
 
 Running this exact model requires new QCS9075-compatible assets from Qualcomm, a
-source Genie export recipe, or a separate custom port. This is a platform
-compatibility result, not a failed agent benchmark. The probe is documented in
+source Genie export recipe, or a separate custom port. The probe is documented in
 [the QAI Hub follow-up](docs/benchmarks/qc_ai_hub_followup_20260629.md#mistral-7b-instruct-v03-from-qc-ai-hub).
 
 #### Ministral reasoning variants
@@ -806,7 +805,7 @@ and latency details are in the
 
 **Status: attribution remains unresolved.**
 
-A Desktop BF16 (bfloat16,brain floating point) row and an IQ9075 W4A16 row differ in more than quantization.
+A Desktop BF16 (bfloat16, brain floating point) row and an IQ9075 W4A16 row differ in more than quantization.
 They may also use different inference engines, chat templates, tool parsers,
 samplers, output limits, and context sizes. No fully controlled run in this
 project holds all those variables constant while changing only numerical
