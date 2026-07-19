@@ -12,6 +12,9 @@ results over several turns, and stop without taking unnecessary actions?
 > The central finding is that an agentic model is not just a checkpoint. Quantization, chat template, tool-schema renderer, output parser, inference runtime, and client loop can severely impact performance. A smaller model behind its native tool protocol can outperform a larger model behind a plausible but
 incorrect protocol!
 
+## Application is key
+The models that scored highest in these tests might perform best for some applications. For your application, it might be different. Also, applications might have different model size budgets. The key take-away is to define realistic benchmarks for each application and then run them with promising candidates. New models for agentic AI on edge devices are released frequently, lists like these are outdated almost as soon as they are run. Re-evaluate new models throughout application lifetime, and switch model when performance increases.
+
 ## Test setup
 
 The evaluation uses two complementary benchmark collections. They intentionally test
@@ -49,7 +52,7 @@ pie showData
 
 The second arena is a realistic local-agent workload. A hospital logistics
 coordinator assigns porters or robots, checks cold-chain limits and elevator
-state, escalates conflicts, and updates jobs. This represents realistic edge agentic AI tasks.
+state, escalates conflicts, and updates jobs. This represents realistic edge agentic AI tasks, and should be replaced for new applications.
 
 `agent_arena/pydantic_hospital_logistics_arena.py` uses a real Pydantic AI loop
 against deterministic mock tools from `agent_arena/hospital_logistics_runtime.py`.
@@ -112,8 +115,7 @@ total, not an official BFCL leaderboard metric. Each model uses its best honest
 native adapter; the semantic task and official scorer remain unchanged. Genie
 rows use settings from the deployed bundle rather than OpenAI request fields;
 see [Inference controls and sampler authority](#inference-controls-and-sampler-authority).
-Desktop-to-device differences are deployment-path deltas, not isolated
-quantization penalties; see [What the BF16-versus-device delta does not prove](#what-the-bf16-versus-device-delta-does-not-prove).
+Performance differences between running a model on desktop and device can not be isolated to quantization precision drop alone; see [What the BF16-versus-device difference does not prove](#what-the-bf16-versus-device-delta-does-not-prove).
 
 | Model and runtime | BFCL80 | BFCL90 | Combined |
 |---|---:|---:|---:|
@@ -145,7 +147,7 @@ xychart horizontal
 ```mermaid
 xychart horizontal
     title "IQ9075 BFCL results"
-    x-axis ["Ornith 9B CPU", "Ministral 3B Q4 HTP", "Ministral 8B Q3 HTP", "Qwen3 4B W4A16 HTP", "Llama 3.1 8B W4A16 HTP", "ToolACE 2.5 8B W4A16 HTP", "Nemotron W4A16 off", "Nemotron W4A16 on"]
+    x-axis ["Ornith 9B CPU", "Ministral 3B Q4 HTP", "Ministral 8B Q3 HTP", "Qwen3 4B W4A16 HTP", "Llama 3.1 8B W4A16 HTP", "ToolACE 2.5 8B W4A16 HTP", "Nemotron W4A16 thinking off HTP", "Nemotron W4A16 thinking on HTP"]
     y-axis "Correct of 170" 0 --> 170
     bar [145, 132, 128, 116, 108, 108, 98, 88]
 ```
@@ -169,8 +171,8 @@ the device result is not directly interchangeable with the best Desktop row.
 
 Nemotron improved substantially after adopting NVIDIA/BFCL-style schemas,
 native placement, final-answer splitting, and conservative parsing. The fresh
-90-case set prevented those fixes from becoming test-specific padding. Thinking
-off remained better for strict function selection; reasoning on spent more
+90-case set prevented those fixes from becoming test-specific padding. `Thinking
+off` remained better for strict function selection; `thinking on` spent more
 tokens without improving executable calls. This does not contradict Nemotron's
 strength in math, coding, or scientific reasoning.
 
@@ -183,7 +185,7 @@ an unnecessary action is still a failure.
 forbidden, duplicate, excess, unexecuted, or out-of-order action. `Average` is
 the mean 0-to-1 ledger score across the 14 cases. It gives partial credit for
 satisfied requirements, then subtracts the same strict failure penalties. It is
-useful for diagnosing near misses, but strict pass is the operational result.
+useful for diagnosing near misses, but strict pass is our criteria.
 
 | Model and runtime | Strict pass | Average |
 |---|---:|---:|
@@ -779,14 +781,14 @@ and latency details are in the
 
 **Status: attribution remains unresolved.**
 
-A Desktop BF16 row and an IQ9075 W4A16 row differ in more than quantization.
+A Desktop BF16 (bfloat16,brain floating point) row and an IQ9075 W4A16 row differ in more than quantization.
 They may also use different inference engines, chat templates, tool parsers,
 samplers, output limits, and context sizes. No fully controlled run in this
 project holds all those variables constant while changing only numerical
 precision.
 
 The observed difference should therefore be described as a deployment-path
-delta, not a pure quantization penalty. Qwen3 sampling experiments show that
+difference, not a pure quantization penalty. Qwen3 sampling experiments show that
 configuration explains part of the gap, while Ministral 3B shows that an
 appropriately matched Q4 device path can equal or slightly exceed its BF16
 reference. ToolACE and Nemotron still show material device deltas, but the
