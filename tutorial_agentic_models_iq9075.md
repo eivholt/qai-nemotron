@@ -1,5 +1,11 @@
 # Agentic LLMs on Dragonwing IQ9075
 
+Author: Eivind Holt, July 2026
+
+Repository: github.com/eivholt/qai-nemotron
+
+Target: Qualcomm Dragonwing IQ-9075 EVK / QCS9075 / Hexagon v73. Hardware generously sponsored by Qualcomm 🙏
+
 This tutorial compares small language models as local planning and tool-selection
 engines on the Qualcomm Dragonwing IQ9075. It is a companion to
 [Deploy Nemotron Nano on Dragonwing IQ9075](https://dragonwingdocs.qualcomm.com/tutorials/deploy-nemotron-nano-on-dragonwing-iq9075),
