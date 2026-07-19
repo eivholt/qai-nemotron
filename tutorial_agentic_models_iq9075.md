@@ -277,9 +277,9 @@ the package could be loaded on IQ9075.
 ### Q4 compiled, but the full model would not map
 
 The [official Q4_K_M GGUF](https://huggingface.co/mistralai/Ministral-3-8B-Instruct-2512-GGUF)
-is about 4.9 GiB. QAIRT's automatic splitter selected
+is about 5.3 GB. QAIRT's automatic splitter selected
 17 contexts, while this Genie path accepts at most nine. Forcing nine produced
-a valid-looking 6.5 GiB Genie export in 1h 26m 34s. The first physical run then
+a valid-looking 7.0 GB Genie export in 1h 26m 34s. The first physical run then
 exposed two separate problems:
 
 1. The QAIRT compiler on the Desktop was version 2.47, but `/opt/qairt/current` on the EVK pointed
@@ -293,7 +293,7 @@ exposed two separate problems:
 The verbose QNN log made the second failure concrete. FastRPC failed to map a
 641,728,512-byte shared-weight buffer into every available process domain and
 returned `err 1002`, which QAIRT defines as `QNN_COMMON_ERROR_MEM_ALLOC`. The
-board still had about 33 GiB of normal RAM available. This was therefore an
+board still had about 35 GB of normal RAM available. This was therefore an
 HTP/FastRPC/SMMU mapping limit, not ordinary Linux memory exhaustion.
 
 `qnn-context-binary-utility` also reported a maximum spill/fill requirement of
@@ -308,8 +308,8 @@ left at the generated zero value.
 QAIRT 2.47 documents HTP quantizer support for Q3_K GGUF tensors. The same
 8B checkpoint was therefore used in [Q3_K_M form](https://huggingface.co/bartowski/mistralai_Ministral-3-8B-Instruct-2512-GGUF).
 This is a more aggressive
-quantization, not a smaller parameter-count model. The 4.0 GiB source produced
-a 6.1 GiB, nine-context HTP package. It loaded all contexts with the side-by-side
+quantization, not a smaller parameter-count model. The 4.3 GB source produced
+a 6.5 GB, nine-context HTP package. It loaded all contexts with the side-by-side
 QAIRT 2.47 runtime and answered a native Mistral prompt correctly:
 
 ```text
@@ -378,6 +378,8 @@ an opaque `Failed to create the dialog` into an actionable deployment result.
 These figures are deliberately labeled. **Measured** values came from logs,
 Genie profiles, process monitoring, or GNU `time`. **Approximate** values are
 rounded observations. **Unrecorded** means no reliable measurement was captured.
+Storage and memory use decimal GB; binary measurements have been converted and
+rounded.
 
 The workstation used an RTX 5090 with 32 GB VRAM and 192 GB system RAM. WSL2 was
 configured for 176 GB RAM and 96 GB swap. GPU inference generally fit in VRAM;
@@ -413,13 +415,13 @@ and ToolACE's representative rate is retained in the
 
 | Operation | Wall time | Peak Desktop memory | Disk/artifact notes |
 |---|---:|---:|---|
-| Nemotron W4A16 quantization, 4K context | 44m 59s measured | 174 GiB RSS measured | 32.1 GB `model.data`; final bundle about 5 GB |
+| Nemotron W4A16 quantization, 4K context | 44m 59s measured | 187 GB RSS measured | 32.1 GB `model.data`; final bundle about 5 GB |
 | ToolACE W4A16 quantization | 3h 31m measured | 183.4 GB RSS measured | 32.1 GB `model.data` plus ONNX graphs |
 | ToolACE local simulator validation | 27m 45s measured | about 97 GB RSS observed | large temporary serialization I/O |
 | ToolACE QAI Hub compile/link/export | 1h 20m measured | not representative locally | five linked binaries, about 5.1 GB total |
 | Ministral 3B Q4 custom HTP build | about 25m measured | unrecorded | source about 2 GB; container/export about 3.3 GB each |
-| Ministral 8B Q4 generic GGUF-to-HTP build | 1h 26m 34s measured | 68.4 GB RSS measured | source 4.9 GiB; cache 66 GB; export 6.5 GiB; final HTP mapping failed |
-| Ministral 8B Q3 generic GGUF-to-HTP build | 1h 14m 42s measured | 84.8 GB RSS measured | source 4.0 GiB; cache 69 GB; export 6.1 GiB; HTP load succeeded |
+| Ministral 8B Q4 generic GGUF-to-HTP build | 1h 26m 34s measured | 68.4 GB RSS measured | source 5.3 GB; cache 66 GB; export 7.0 GB; final HTP mapping failed |
+| Ministral 8B Q3 generic GGUF-to-HTP build | 1h 14m 42s measured | 84.8 GB RSS measured | source 4.3 GB; cache 69 GB; export 6.5 GB; HTP load succeeded |
 | **Ministral 8B Q3 BFCL80 on IQ9075** | 1h 13m 44s measured | about 0.38 GB Desktop client RSS | 67/80; three strict 300-second timeouts |
 | **Ministral 8B Q3 BFCL90 on IQ9075** | 1h 15m 04s measured | about 0.38 GB Desktop client RSS | 61/90; two strict 300-second timeouts |
 | **Ministral 8B Q3 hospital14 on IQ9075** | 1h 02m 50s measured | about 0.12 GB Desktop client RSS | 8/14; two controlled timeouts in L2 |
