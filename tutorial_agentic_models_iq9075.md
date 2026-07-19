@@ -210,11 +210,25 @@ its average falls from 0.655 to 0.571. It passes eight of nine bounded decisions
 but none of the five long workflows. The device run takes 1h 02m 50s and includes
 two controlled 300-second generation timeouts in L2; neither is a QNN failure (Qualcomm Neural Network runtime, which loads and executes the compiled model on the Hexagon HTP/NPU).
 
-One shared-suite caveat is that the long workflows also expose simplified
-`*_pending_*` convenience tools intended for bounded cases. Q3 selected those
-wrappers in L0 and L4. The strict failures remain for comparability; the calls are
-not aliased. A future revision should hide the convenience tools and rerun
-every model rather than repair one model's row.
+The long workflows accidentally exposed two versions of some actions. Short
+cases use no-argument shortcuts such as `reserve_pending_elevator()` and
+`assign_pending_porter()`. Long cases expect the full tools, such as
+`reserve_elevator(elevator_id, job_id, ...)` and
+`assign_porter(porter_id, job_id)`, because choosing the correct elevator,
+porter, and job is part of the task.
+
+Ministral 8B Q3 used `reserve_pending_elevator()` and
+`assign_pending_porter()` in L0, the linen-delivery workflow. It used
+`escalate_pending_job()` in L4, the blood-product conflict. The mock runtime
+could perform these calls, but the strict scorer counted them as extra actions
+and still reported the required full calls as missing. These were not the only
+errors: L0 also contained unnecessary and repeated calls, while L4 skipped the
+required policy check and supplied the wrong status-update arguments.
+
+The published scores are therefore unchanged. Every model received the same
+tool list and scoring rules, and accepting shortcuts only for Ministral would
+make the comparison unfair. A future benchmark revision should hide the
+shortcuts during long workflows and rerun every model under that cleaner setup.
 
 No local model reliably completed all five long workflows. The practical design
 response is not to hide failures with permissive parsing. Keep each decision
