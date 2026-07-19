@@ -208,7 +208,7 @@ useful for diagnosing near misses, but strict pass is our criteria.
 Ministral 8B Q3 matches its Desktop BF16 reference at 8/14 strict passes, although
 its average falls from 0.655 to 0.571. It passes eight of nine bounded decisions
 but none of the five long workflows. The device run takes 1h 02m 50s and includes
-two controlled 300-second generation timeouts in L2; neither is a QNN failure.
+two controlled 300-second generation timeouts in L2; neither is a QNN failure (Qualcomm Neural Network runtime, which loads and executes the compiled model on the Hexagon HTP/NPU).
 
 One shared-suite caveat is that the long workflows also expose simplified
 `*_pending_*` convenience tools intended for bounded cases. Q3 selected those
