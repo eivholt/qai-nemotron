@@ -404,11 +404,7 @@ benchmark also tests different reasoning or sampling modes.
 | **Ministral 3B Q4** | HTP/NPU | 266.45 | 4.93 | Median of 13 saved hospital requests; 2.04 s dialog initialization |
 | **Ministral 8B Q3** | HTP/NPU | 15.32 | 1.91 | Native smoke profile; 4.39 s dialog initialization |
 
-Qwen3's full BFCL profile statistics are recorded in the
-[Qwen3 export notes](docs/benchmarks/qwen3_iq9075_export_resume_20260629.md).
-Ornith thread scaling and the Ministral 8B profile are documented in the
-[model coverage report](docs/benchmarks/model_coverage_and_agentic_comparison_20260716.md),
-and ToolACE's representative rate is retained in the
+ToolACE's representative rate is also retained in the
 [machine-readable comparison data](docs/benchmarks/data/toolace25_and_ministral8b_iq9075_20260717.json).
 
 ### Export and benchmark resources
@@ -494,11 +490,9 @@ checks outside the LLM. The edge value proposition is privacy, continuity during
 cloud outages, and local operational latency, not unrestricted autonomous
 control.
 
-Detailed provenance and the complete comparison tables are in
-`docs/benchmarks/model_coverage_and_agentic_comparison_20260716.md`. Raw result
-directories are intentionally git-ignored because they contain large prompts,
-responses, and Genie profiles. The ToolACE and Ministral 8B measurements are
-also available as machine-readable data in
+Raw result directories are intentionally git-ignored because they contain large
+prompts, responses, and Genie profiles. The ToolACE and Ministral 8B measurements
+are available as machine-readable data in
 `docs/benchmarks/data/toolace25_and_ministral8b_iq9075_20260717.json`.
 
 
@@ -687,8 +681,6 @@ issues had to be fixed before it became a useful agent host:
 The service still lacked the same pluggable BFCL, Qwen, Mistral, ToolACE, and
 Nemotron parser coverage as the experimental bridge. Final cross-model tables
 therefore use the common inspectable path rather than mixing server semantics.
-The detailed experiment history is preserved in
-[the hosting findings](docs/benchmarks/agentic_benchmark_findings.md#qualcomm-c-genieapiservice).
 
 #### Stock Llama synthetic transcripts
 
@@ -777,8 +769,7 @@ profile failed with `QNN_CONTEXT_ERROR_CREATE_FROM_BINARY` before model
 execution, so copying the same binaries to the physical board would not help.
 
 Running this exact model requires new QCS9075-compatible assets from Qualcomm, a
-source Genie export recipe, or a separate custom port. The probe is documented in
-[the QAI Hub follow-up](docs/benchmarks/qc_ai_hub_followup_20260629.md#mistral-7b-instruct-v03-from-qc-ai-hub).
+source Genie export recipe, or a separate custom port.
 
 #### Ministral reasoning variants
 
@@ -797,9 +788,7 @@ the executable tool-call channel.
 
 The reasoning variants consumed roughly 800-1,000 median output tokens per BFCL
 request without improving strict hospital completion. For these tool-selection
-workloads, the Instruct checkpoints are the practical choice. Full configuration
-and latency details are in the
-[Ministral variant comparison](docs/benchmarks/ministral_3_variant_comparison_20260717.md).
+workloads, the Instruct checkpoints are the practical choice.
 
 #### What the BF16-versus-device delta does not prove
 
@@ -861,8 +850,7 @@ Qwen3 required an isolated `qai-qwen3-export` environment:
 
 The resulting W4A16 bundle was validated on the physical IQ9075 HTP. These
 workarounds should be treated as exact-version history rather than permanent
-installation advice. Commands and package versions are recorded in the
-[Qwen3 export notes](docs/benchmarks/qwen3_iq9075_export_resume_20260629.md).
+installation advice.
 
 #### Pydantic tools versus MCP
 
