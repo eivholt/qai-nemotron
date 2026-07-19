@@ -404,8 +404,6 @@ benchmark also tests different reasoning or sampling modes.
 | **Ministral 3B Q4** | HTP/NPU | 266.45 | 4.93 | Median of 13 saved hospital requests; 2.04 s dialog initialization |
 | **Ministral 8B Q3** | HTP/NPU | 15.32 | 1.91 | Native smoke profile; 4.39 s dialog initialization |
 
-ToolACE's representative rate is also retained in the
-[machine-readable comparison data](docs/benchmarks/data/toolace25_and_ministral8b_iq9075_20260717.json).
 
 ### Export and benchmark resources
 
