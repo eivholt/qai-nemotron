@@ -336,17 +336,25 @@ receive credit. The strict runner now converts infrastructure failures into a
 reserved invalid tool call. It cannot match any expected function and therefore
 always scores as a failure.
 
-With natural EOS, a 300-second hard timeout, and strict failure accounting, Q3
-completed BFCL80 at 67/80 and BFCL90 at 61/90: 128/170, or 75.3%. Three BFCL80
-requests and two BFCL90 requests timed out; all five were counted as failures.
-The suites took 1h 13m 44s and 1h 15m 04s respectively. The result is only four
-calls behind Ministral 3B Q4 on HTP, but it is much slower and remains below the
-Desktop 8B BF16 reference at 138/170.
+EOS means **end of sequence**. It is a special token the model emits to tell the
+runtime that its answer is complete. "Natural EOS" means the run lets the model
+finish by emitting that token instead of cutting every response at a fixed
+output-token limit. A 300-second timeout remains as a safety stop when the model
+does not finish naturally.
+
+With natural EOS and strict failure accounting, Q3 completed BFCL80 at 67/80
+and BFCL90 at 61/90: 128/170, or 75.3%. Three BFCL80 requests and two BFCL90
+requests reached the timeout; all five were counted as failures. The suites took
+1h 13m 44s and 1h 15m 04s respectively. The result is only four calls behind
+Ministral 3B Q4 on HTP, but it is much slower and remains below the Desktop 8B
+BF16 reference at 138/170.
 
 A raw `Say OK.` prompt without Mistral's native chat wrapper ran for more than
-11 minutes and did not terminate. The exact native `[INST]...[/INST]` request
-returned in 6.6 seconds. This is a useful reminder that an NPU performance test
-must validate the model's template and EOS behavior before blaming hardware.
+11 minutes without reaching a recognized EOS token. The exact native
+`[INST]...[/INST]` request returned in 6.6 seconds. The prompt wrapper therefore
+affects not only answer formatting, but also whether generation terminates as
+expected. An NPU performance test should verify both the model's native template
+and its configured EOS token before blaming the hardware.
 
 ### Keep compiler and runtime versions together
 
@@ -659,7 +667,8 @@ exported Genie bundle used `0.8 / 40 / 0.95`. A separate deterministic clone
 used `0.0 / 1 / 1.0`. Both device rows were retained because they are
 different inference configurations, even though the weights are identical. The
 bridge also cannot enforce the OpenAI output-token cap through a Genie CLI
-option; natural EOS and the bundle context limit still control termination.
+option; the model's EOS stop token and the bundle context limit still control
+termination.
 
 #### Persistent C++ service fixes
 
