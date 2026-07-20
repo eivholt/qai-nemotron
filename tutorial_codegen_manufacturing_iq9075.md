@@ -5,9 +5,7 @@
 **Target:** [Qualcomm Dragonwing IQ-9075 EVK / QCS9075 / Hexagon v73](https://www.qualcomm.com/developer/hardware/qualcomm-iq-9075-evaluation-kit-evk). Hardware generously sponsored by Qualcomm 🙏  
 **Model:** [mistralai/Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512) Q4_K_M GGUF running on device NPU
 
-Function calling asks a language model to choose the next tool. Code generation
-asks it to generate a small program that can call several APIs, calculate derived
-values, branch on policy. Successful code can be saved and reused when input data changes.
+`Function calling` agentic AI asks a language model to choose the next tool(s). `Code generation and -execution` asks it to generate a small program that can call several APIs, calculate derived values, branch on policy. Successful code can be saved and reused when input data changes.
 
 This tutorial demonstrates code generating and -execution AI agents on the Qualcomm Dragonwing IQ9075 EVK.
 A local Ministral 3B model generates five different Python programs for mocked
@@ -16,7 +14,11 @@ sampling, energy scheduling, and spare-parts replenishment. Python executes each
 program in a restricted child process, while deterministic mock runtimes record
 and validate every API call.
 
-The example is console based. It does not control a machine, safety interlock, or
+While this demonstrates that edge-fit models are capable for code generation and execution, they are far from being as capable as large frontier LLMs. For now, task complexity has to be reduced to an appropriate level. What's more interesting is the threshold this has crossed; as models get better and hardware more capable - imagine how future self-evolving systems like this can be created. 
+
+> Desired behavior and requirements can be provided as natural language prompts, capabilities and service descriptions can be plugged in, and the system will generate itself ad-hoc! Whether this is an utopian scenario for automation, or the beginning of Skynet is up to us as responsible developers to decide.
+
+The example is console based and sandboxed. It does not control a machine, safety interlock, or
 real-time process.
 
 ## Related tutorials
