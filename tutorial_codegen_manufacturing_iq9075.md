@@ -1,10 +1,15 @@
-# Build a Code-Generating Manufacturing Agent on Dragonwing IQ9075
+# Build a Code-Generating Agent on Dragonwing IQ9075
+
+**Author:** [Eivind Holt](https://www.linkedin.com/in/eivholt/), June 2026  
+**Repository:** [github.com/eivholt/qai-nemotron](https://github.com/eivholt/qai-nemotron)  
+**Target:** [Qualcomm Dragonwing IQ-9075 EVK / QCS9075 / Hexagon v73](https://www.qualcomm.com/developer/hardware/qualcomm-iq-9075-evaluation-kit-evk). Hardware generously sponsored by Qualcomm 🙏  
+**Model:** [mistralai/Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512) Q4_K_M GGUF running on device NPU
 
 Function calling asks a language model to choose the next tool. Code generation
-asks it to compose a small program that can call several APIs, calculate derived
-values, branch on policy, and be reused when input data changes.
+asks it to generate a small program that can call several APIs, calculate derived
+values, branch on policy. Successful code can be saved and reused when input data changes.
 
-This tutorial builds the second pattern on the Qualcomm Dragonwing IQ9075 EVK.
+This tutorial demonstrates code generating and -execution AI agents on the Qualcomm Dragonwing IQ9075 EVK.
 A local Ministral 3B model generates five different Python programs for mocked
 production operations: batch disposition, maintenance priority, quality
 sampling, energy scheduling, and spare-parts replenishment. Python executes each
@@ -99,8 +104,7 @@ flowchart TD
 ```
 
 The model is involved while generating or repairing the program. A cache hit
-does not call the model. This matters on an edge device: inference is relatively
-expensive, while a short validated Python program executes in milliseconds.
+does not call the model to revalidate the previously generated code. This matters on an edge device: inference is relatively expensive, while a short validated Python program executes in milliseconds.
 
 ## Repository files
 
@@ -116,8 +120,6 @@ expensive, while a short validated Python program executes in milliseconds.
 | `shipping_agent/genie_cpp_adapter.py` | Native Mistral prompt renderer and OpenAI-compatible adapter |
 | `scripts/export_ministral3_3b_iq9075_gguf.py` | GGUF-to-Genie export helper |
 
-The manufacturing application uses only the Python standard library. The
-shipping support directory is reused only for the established model service.
 
 ## Model choice
 
@@ -518,6 +520,26 @@ ordinary code and states the general invariant the generated program must
 satisfy: collect first, decide once, and notify after every disposition. Repair
 feedback names failed invariants instead of asking the model to infer them from
 a large JSON trace.
+
+When generated code fails validation, the next model request receives a short explanation of which rules were broken, rather than the entire raw execution log.
+For example, instead of returning a large JSON document containing every API request, response, state value, and validation field, the repair prompt might say:
+
+```python
+sampling failed:
+calls included get_station_quality four times;
+expected two calls;
+the final action and target were correct.
+```
+
+The “invariants” are the rules that must remain true for every scenario, such as:
+- read each required value exactly once;
+- perform all reads before making changes;
+- choose exactly one final action;
+- use the correct target and arguments;
+- send one notification after the action;
+- make no extra API calls.
+
+This makes the repair easier for a small model. It does not tell the model the scenario’s correct answer or provide replacement code. It identifies the general rule that the previous program violated, and the model must generate a corrected complete program.
 
 ## How generated code reaches the mock APIs
 
