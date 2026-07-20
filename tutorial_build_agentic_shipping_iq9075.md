@@ -1,4 +1,4 @@
-# Build a Console Shipping Agent on Dragonwing IQ9075 using MCP Tool-calling
+# Build a Shipping Agent on Dragonwing IQ9075 using MCP Tool-calling
 
 **Author:** [Eivind Holt](https://www.linkedin.com/in/eivholt/), July 2026  
 **Repository:** [github.com/eivholt/qai-nemotron](https://github.com/eivholt/qai-nemotron)  
