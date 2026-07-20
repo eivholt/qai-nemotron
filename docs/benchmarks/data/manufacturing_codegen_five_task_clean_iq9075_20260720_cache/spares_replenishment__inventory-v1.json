@@ -1,0 +1,119 @@
+{
+  "task": "spares_replenishment",
+  "contract_version": "inventory-v1",
+  "contract_hash": "fe75c13ed20cb3d8ad3361ddb32c860cdde5936dc5755c24b45e30f44f45f457",
+  "sandbox_version": "manufacturing-sandbox-v2",
+  "validator_version": "strict-mock-validator-v2",
+  "model": "ministral3-3b-q4",
+  "accepted_at": "2026-07-19T23:45:53.359700+00:00",
+  "promotion_scenarios": [
+    "sufficient",
+    "order",
+    "escalate"
+  ],
+  "promotion_results": {
+    "sufficient": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "spares_replenishment",
+        "scenario": "sufficient",
+        "expected": {
+          "action": "inventory_ok",
+          "target": "BEARING-42",
+          "quantity": 0
+        },
+        "actual": {
+          "action": "inventory_ok",
+          "target": "BEARING-42",
+          "quantity": 0
+        },
+        "call_names": [
+          "get_required_part",
+          "get_supplier_options",
+          "record_inventory_ok",
+          "notify_inventory"
+        ],
+        "expected_calls": [
+          "get_required_part",
+          "get_supplier_options",
+          "record_inventory_ok",
+          "notify_inventory"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    },
+    "order": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "spares_replenishment",
+        "scenario": "order",
+        "expected": {
+          "action": "ordered",
+          "target": "SUP-A",
+          "quantity": 7
+        },
+        "actual": {
+          "action": "ordered",
+          "target": "SUP-A",
+          "quantity": 7
+        },
+        "call_names": [
+          "get_required_part",
+          "get_supplier_options",
+          "create_purchase_order",
+          "notify_inventory"
+        ],
+        "expected_calls": [
+          "get_required_part",
+          "get_supplier_options",
+          "create_purchase_order",
+          "notify_inventory"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    },
+    "escalate": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "spares_replenishment",
+        "scenario": "escalate",
+        "expected": {
+          "action": "escalated",
+          "target": "BEARING-42",
+          "quantity": 8
+        },
+        "actual": {
+          "action": "escalated",
+          "target": "BEARING-42",
+          "quantity": 8
+        },
+        "call_names": [
+          "get_required_part",
+          "get_supplier_options",
+          "escalate_shortage",
+          "notify_inventory"
+        ],
+        "expected_calls": [
+          "get_required_part",
+          "get_supplier_options",
+          "escalate_shortage",
+          "notify_inventory"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    }
+  },
+  "code": "import plant_api\n\ndef run_spare_parts_pipeline():\n    part_data = plant_api.get_required_part()\n    suppliers = plant_api.get_supplier_options()\n\n    shortage = max(part_data[\"required_quantity\"] - part_data[\"on_hand\"], 0)\n    if shortage == 0:\n        plant_api.record_inventory_ok(part_data[\"part_id\"], \"sufficient stock\")\n        plant_api.notify_inventory(\"Inventory is sufficient.\")\n    else:\n        feasible_supplier = next(\n            (supplier for supplier in suppliers[\"suppliers\"]\n             if supplier[\"available_quantity\"] >= shortage and supplier[\"lead_days\"] <= part_data[\"needed_in_days\"]),\n            None\n        )\n        if feasible_supplier:\n            plant_api.create_purchase_order(\n                part_data[\"part_id\"], feasible_supplier[\"supplier_id\"], shortage\n            )\n            plant_api.notify_inventory(f\"Ordered {shortage} units from {feasible_supplier['supplier_id']}.\")\n        else:\n            plant_api.escalate_shortage(part_data[\"part_id\"], \"no feasible supplier found\")\n            plant_api.notify_inventory(\"Shortage escalated due to no feasible supplier.\")\n\nrun_spare_parts_pipeline()"
+}

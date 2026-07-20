@@ -1,0 +1,276 @@
+{
+  "label": "ministral3b_manufacturing_v4",
+  "model": "ministral3-3b-q4",
+  "reuse_policy": "execute_first",
+  "passed": 4,
+  "total": 4,
+  "cache_path": "/home/ubuntu/manufacturing_agent_results_v4/cache/ministral3b_manufacturing_v4/manufacturing_policy_v4.py",
+  "system_prompt": "You write concise, reliable Python for a sandboxed factory analysis runtime.\nReturn exactly one complete program in one python code block and no other text.\nUse plant_api as the only way to read or update plant state. Compute decisions from\nreturned data and policy. Never hard-code batch IDs, machine IDs, limits, or outcomes.\n",
+  "program_task": "Write one reusable Python program that evaluates the active production batch.\n\nAvailable plant_api functions:\n- get_production_context() -> dict with batch_id, product, machine_ids, and status\n- get_policy() -> dict with max_temperature_c, max_vibration_rms, max_defect_rate\n- get_quality_counts() -> dict with inspected and defects\n- get_sensor_summary(machine_id) -> dict with machine_id, max_temperature_c,\n  and vibration_rms\n- schedule_inspection(machine_id, reason)\n- release_batch(batch_id, evidence)\n- hold_batch(batch_id, reason); an inspection must be scheduled first\n- quarantine_batch(batch_id, reason)\n- notify_supervisor(message)\n- APIError is raised automatically when an API operation is rejected\n\nRequired policy:\n1. Read context, policy, quality counts, and every machine's sensor window before\n   taking an action.\n2. defect_rate = defects / inspected.\n3. Read max_temperature_c and vibration_rms from each machine summary.\n4. If defect_rate is greater than max_defect_rate, quarantine the batch.\n5. Otherwise, if any machine summary exceeds either matching policy limit,\n   schedule one inspection for the first anomalous machine and hold the batch.\n6. Otherwise release the batch.\n7. Notify the supervisor exactly once after the disposition succeeds.\n\nProgram structure matters: first collect every machine summary without taking\nany action. Store each complete summary dict. After the read loop, choose\nexactly one disposition for the batch. When holding, inspect the first stored\nsummary whose max_temperature_c or vibration_rms exceeds its matching policy\nlimit. Notify the supervisor after every successful disposition, including\nhold and quarantine.\n\nKeep the program under 100 lines. Import only plant_api. Do not access\nfiles, sockets, subprocesses, environment variables, or absolute paths directly.\n",
+  "model_timeout_s": 300.0,
+  "repair_retries": 2,
+  "results": [
+    {
+      "scenario": "normal",
+      "passed": true,
+      "cache_hit": false,
+      "failure": "passed",
+      "attempts": [
+        {
+          "attempt": 1,
+          "passed": true,
+          "failure": "passed",
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "expected": {
+              "action": "released",
+              "inspection_machine_id": null
+            },
+            "actual": {
+              "action": "released",
+              "inspection_machine_id": null
+            },
+            "notified": true,
+            "call_names": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "release_batch",
+              "notify_supervisor"
+            ],
+            "expected_calls": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "release_batch",
+              "notify_supervisor"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "tool_errors": [],
+            "inspections": []
+          }
+        }
+      ],
+      "generations": [
+        {
+          "attempt": 1,
+          "elapsed_s": 64.35,
+          "output_chars": 1334,
+          "raw_text": "```python\nimport plant_api\n\ndef evaluate_batch():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_summaries = []\n\n    for machine_id in context['machine_ids']:\n        summary = plant_api.get_sensor_summary(machine_id)\n        machine_summaries.append(summary)\n\n    defect_rate = quality['defects'] / quality['inspected'] if quality['inspected'] else 0\n\n    if defect_rate > policy['max_defect_rate']:\n        plant_api.quarantine_batch(context['batch_id'], \"High defect rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy.\")\n    else:\n        for summary in machine_summaries:\n            if (summary['max_temperature_c'] > policy['max_temperature_c'] or\n                summary['vibration_rms'] > policy['max_vibration_rms']):\n                plant_api.schedule_inspection(summary['machine_id'], \"Anomaly detected\")\n                plant_api.hold_batch(context['batch_id'], \"Machine anomaly detected\")\n                plant_api.notify_supervisor(\"Batch held due to machine anomaly.\")\n                break\n        else:\n            plant_api.release_batch(context['batch_id'], \"No issues detected\")\n            plant_api.notify_supervisor(\"Batch released successfully.\")\n\nevaluate_batch()\n```",
+          "code": "import plant_api\n\ndef evaluate_batch():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_summaries = []\n\n    for machine_id in context['machine_ids']:\n        summary = plant_api.get_sensor_summary(machine_id)\n        machine_summaries.append(summary)\n\n    defect_rate = quality['defects'] / quality['inspected'] if quality['inspected'] else 0\n\n    if defect_rate > policy['max_defect_rate']:\n        plant_api.quarantine_batch(context['batch_id'], \"High defect rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy.\")\n    else:\n        for summary in machine_summaries:\n            if (summary['max_temperature_c'] > policy['max_temperature_c'] or\n                summary['vibration_rms'] > policy['max_vibration_rms']):\n                plant_api.schedule_inspection(summary['machine_id'], \"Anomaly detected\")\n                plant_api.hold_batch(context['batch_id'], \"Machine anomaly detected\")\n                plant_api.notify_supervisor(\"Batch held due to machine anomaly.\")\n                break\n        else:\n            plant_api.release_batch(context['batch_id'], \"No issues detected\")\n            plant_api.notify_supervisor(\"Batch released successfully.\")\n\nevaluate_batch()"
+        }
+      ],
+      "raw_text": "```python\nimport plant_api\n\ndef evaluate_batch():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_summaries = []\n\n    for machine_id in context['machine_ids']:\n        summary = plant_api.get_sensor_summary(machine_id)\n        machine_summaries.append(summary)\n\n    defect_rate = quality['defects'] / quality['inspected'] if quality['inspected'] else 0\n\n    if defect_rate > policy['max_defect_rate']:\n        plant_api.quarantine_batch(context['batch_id'], \"High defect rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy.\")\n    else:\n        for summary in machine_summaries:\n            if (summary['max_temperature_c'] > policy['max_temperature_c'] or\n                summary['vibration_rms'] > policy['max_vibration_rms']):\n                plant_api.schedule_inspection(summary['machine_id'], \"Anomaly detected\")\n                plant_api.hold_batch(context['batch_id'], \"Machine anomaly detected\")\n                plant_api.notify_supervisor(\"Batch held due to machine anomaly.\")\n                break\n        else:\n            plant_api.release_batch(context['batch_id'], \"No issues detected\")\n            plant_api.notify_supervisor(\"Batch released successfully.\")\n\nevaluate_batch()\n```",
+      "code": "import plant_api\n\ndef evaluate_batch():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_summaries = []\n\n    for machine_id in context['machine_ids']:\n        summary = plant_api.get_sensor_summary(machine_id)\n        machine_summaries.append(summary)\n\n    defect_rate = quality['defects'] / quality['inspected'] if quality['inspected'] else 0\n\n    if defect_rate > policy['max_defect_rate']:\n        plant_api.quarantine_batch(context['batch_id'], \"High defect rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy.\")\n    else:\n        for summary in machine_summaries:\n            if (summary['max_temperature_c'] > policy['max_temperature_c'] or\n                summary['vibration_rms'] > policy['max_vibration_rms']):\n                plant_api.schedule_inspection(summary['machine_id'], \"Anomaly detected\")\n                plant_api.hold_batch(context['batch_id'], \"Machine anomaly detected\")\n                plant_api.notify_supervisor(\"Batch held due to machine anomaly.\")\n                break\n        else:\n            plant_api.release_batch(context['batch_id'], \"No issues detected\")\n            plant_api.notify_supervisor(\"Batch released successfully.\")\n\nevaluate_batch()",
+      "execution": {
+        "ok": true,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "summary": {
+        "passed": true,
+        "expected": {
+          "action": "released",
+          "inspection_machine_id": null
+        },
+        "actual": {
+          "action": "released",
+          "inspection_machine_id": null
+        },
+        "notified": true,
+        "call_names": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "release_batch",
+          "notify_supervisor"
+        ],
+        "expected_calls": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "release_batch",
+          "notify_supervisor"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "tool_errors": [],
+        "inspections": []
+      }
+    },
+    {
+      "scenario": "bearing_vibration",
+      "passed": true,
+      "cache_hit": true,
+      "code": "import plant_api\n\ndef evaluate_batch():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_summaries = []\n\n    for machine_id in context['machine_ids']:\n        summary = plant_api.get_sensor_summary(machine_id)\n        machine_summaries.append(summary)\n\n    defect_rate = quality['defects'] / quality['inspected'] if quality['inspected'] else 0\n\n    if defect_rate > policy['max_defect_rate']:\n        plant_api.quarantine_batch(context['batch_id'], \"High defect rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy.\")\n    else:\n        for summary in machine_summaries:\n            if (summary['max_temperature_c'] > policy['max_temperature_c'] or\n                summary['vibration_rms'] > policy['max_vibration_rms']):\n                plant_api.schedule_inspection(summary['machine_id'], \"Anomaly detected\")\n                plant_api.hold_batch(context['batch_id'], \"Machine anomaly detected\")\n                plant_api.notify_supervisor(\"Batch held due to machine anomaly.\")\n                break\n        else:\n            plant_api.release_batch(context['batch_id'], \"No issues detected\")\n            plant_api.notify_supervisor(\"Batch released successfully.\")\n\nevaluate_batch()",
+      "attempts": [],
+      "failure": "passed",
+      "execution": {
+        "ok": true,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "summary": {
+        "passed": true,
+        "expected": {
+          "action": "held",
+          "inspection_machine_id": "CELL-2"
+        },
+        "actual": {
+          "action": "held",
+          "inspection_machine_id": "CELL-2"
+        },
+        "notified": true,
+        "call_names": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "schedule_inspection",
+          "hold_batch",
+          "notify_supervisor"
+        ],
+        "expected_calls": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "schedule_inspection",
+          "hold_batch",
+          "notify_supervisor"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "tool_errors": [],
+        "inspections": [
+          {
+            "machine_id": "CELL-2",
+            "reason": "Anomaly detected"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "thermal_drift",
+      "passed": true,
+      "cache_hit": true,
+      "code": "import plant_api\n\ndef evaluate_batch():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_summaries = []\n\n    for machine_id in context['machine_ids']:\n        summary = plant_api.get_sensor_summary(machine_id)\n        machine_summaries.append(summary)\n\n    defect_rate = quality['defects'] / quality['inspected'] if quality['inspected'] else 0\n\n    if defect_rate > policy['max_defect_rate']:\n        plant_api.quarantine_batch(context['batch_id'], \"High defect rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy.\")\n    else:\n        for summary in machine_summaries:\n            if (summary['max_temperature_c'] > policy['max_temperature_c'] or\n                summary['vibration_rms'] > policy['max_vibration_rms']):\n                plant_api.schedule_inspection(summary['machine_id'], \"Anomaly detected\")\n                plant_api.hold_batch(context['batch_id'], \"Machine anomaly detected\")\n                plant_api.notify_supervisor(\"Batch held due to machine anomaly.\")\n                break\n        else:\n            plant_api.release_batch(context['batch_id'], \"No issues detected\")\n            plant_api.notify_supervisor(\"Batch released successfully.\")\n\nevaluate_batch()",
+      "attempts": [],
+      "failure": "passed",
+      "execution": {
+        "ok": true,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "summary": {
+        "passed": true,
+        "expected": {
+          "action": "held",
+          "inspection_machine_id": "CELL-1"
+        },
+        "actual": {
+          "action": "held",
+          "inspection_machine_id": "CELL-1"
+        },
+        "notified": true,
+        "call_names": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "schedule_inspection",
+          "hold_batch",
+          "notify_supervisor"
+        ],
+        "expected_calls": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "schedule_inspection",
+          "hold_batch",
+          "notify_supervisor"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "tool_errors": [],
+        "inspections": [
+          {
+            "machine_id": "CELL-1",
+            "reason": "Anomaly detected"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "quality_spike",
+      "passed": true,
+      "cache_hit": true,
+      "code": "import plant_api\n\ndef evaluate_batch():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_summaries = []\n\n    for machine_id in context['machine_ids']:\n        summary = plant_api.get_sensor_summary(machine_id)\n        machine_summaries.append(summary)\n\n    defect_rate = quality['defects'] / quality['inspected'] if quality['inspected'] else 0\n\n    if defect_rate > policy['max_defect_rate']:\n        plant_api.quarantine_batch(context['batch_id'], \"High defect rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy.\")\n    else:\n        for summary in machine_summaries:\n            if (summary['max_temperature_c'] > policy['max_temperature_c'] or\n                summary['vibration_rms'] > policy['max_vibration_rms']):\n                plant_api.schedule_inspection(summary['machine_id'], \"Anomaly detected\")\n                plant_api.hold_batch(context['batch_id'], \"Machine anomaly detected\")\n                plant_api.notify_supervisor(\"Batch held due to machine anomaly.\")\n                break\n        else:\n            plant_api.release_batch(context['batch_id'], \"No issues detected\")\n            plant_api.notify_supervisor(\"Batch released successfully.\")\n\nevaluate_batch()",
+      "attempts": [],
+      "failure": "passed",
+      "execution": {
+        "ok": true,
+        "returncode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "summary": {
+        "passed": true,
+        "expected": {
+          "action": "quarantined",
+          "inspection_machine_id": null
+        },
+        "actual": {
+          "action": "quarantined",
+          "inspection_machine_id": null
+        },
+        "notified": true,
+        "call_names": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "quarantine_batch",
+          "notify_supervisor"
+        ],
+        "expected_calls": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "quarantine_batch",
+          "notify_supervisor"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "tool_errors": [],
+        "inspections": []
+      }
+    }
+  ]
+}

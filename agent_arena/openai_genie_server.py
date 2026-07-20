@@ -87,6 +87,8 @@ def compact_json(value: Any, max_chars: int = 12000) -> str:
 
 
 def message_content_text(content: Any) -> str:
+    if content is None:
+        return ""
     if isinstance(content, str):
         return content
     return compact_json(content, max_chars=4000)

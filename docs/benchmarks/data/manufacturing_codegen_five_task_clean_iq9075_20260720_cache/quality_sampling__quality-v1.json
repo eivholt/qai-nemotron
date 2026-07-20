@@ -1,0 +1,125 @@
+{
+  "task": "quality_sampling",
+  "contract_version": "quality-v1",
+  "contract_hash": "358ecf6f2ff10f7f45427c3731870c138a013a4d311c5f1729642e76f22a4175",
+  "sandbox_version": "manufacturing-sandbox-v2",
+  "validator_version": "strict-mock-validator-v2",
+  "model": "ministral3-3b-q4",
+  "accepted_at": "2026-07-19T23:44:00.469625+00:00",
+  "promotion_scenarios": [
+    "release",
+    "sampling",
+    "quarantine"
+  ],
+  "promotion_results": {
+    "release": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "quality_sampling",
+        "scenario": "release",
+        "expected": {
+          "action": "released",
+          "target": "LOT-70"
+        },
+        "actual": {
+          "action": "released",
+          "target": "LOT-70"
+        },
+        "call_names": [
+          "get_inspection_policy",
+          "get_active_lot",
+          "get_station_quality",
+          "get_station_quality",
+          "release_lot",
+          "notify_quality"
+        ],
+        "expected_calls": [
+          "get_inspection_policy",
+          "get_active_lot",
+          "get_station_quality",
+          "get_station_quality",
+          "release_lot",
+          "notify_quality"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    },
+    "sampling": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "quality_sampling",
+        "scenario": "sampling",
+        "expected": {
+          "action": "sampling",
+          "target": "S-2"
+        },
+        "actual": {
+          "action": "sampling",
+          "target": "S-2"
+        },
+        "call_names": [
+          "get_inspection_policy",
+          "get_active_lot",
+          "get_station_quality",
+          "get_station_quality",
+          "increase_sampling",
+          "notify_quality"
+        ],
+        "expected_calls": [
+          "get_inspection_policy",
+          "get_active_lot",
+          "get_station_quality",
+          "get_station_quality",
+          "increase_sampling",
+          "notify_quality"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    },
+    "quarantine": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "quality_sampling",
+        "scenario": "quarantine",
+        "expected": {
+          "action": "quarantined",
+          "target": "LOT-70"
+        },
+        "actual": {
+          "action": "quarantined",
+          "target": "LOT-70"
+        },
+        "call_names": [
+          "get_inspection_policy",
+          "get_active_lot",
+          "get_station_quality",
+          "get_station_quality",
+          "quarantine_lot",
+          "notify_quality"
+        ],
+        "expected_calls": [
+          "get_inspection_policy",
+          "get_active_lot",
+          "get_station_quality",
+          "get_station_quality",
+          "quarantine_lot",
+          "notify_quality"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    }
+  },
+  "code": "import plant_api\n\ndef decide_lot_action():\n    policy = plant_api.get_inspection_policy()\n    lot = plant_api.get_active_lot()\n    stations = [plant_api.get_station_quality(st) for st in lot['station_ids']]\n\n    total_inspected = sum(station['inspected'] for station in stations)\n    total_defects = sum(station['defects'] for station in stations)\n    total_defect_rate = total_defects / total_inspected if total_inspected > 0 else 0\n\n    if total_defect_rate > policy['max_total_defect_rate']:\n        plant_api.quarantine_lot(lot['lot_id'], \"High defect rate\")\n    else:\n        max_rework = max(station['rework'] / station['inspected'] for station in stations if station['inspected'] > 0)\n        if max_rework > policy['max_station_rework_rate']:\n            for station in stations:\n                if station['rework'] / station['inspected'] > policy['max_station_rework_rate']:\n                    plant_api.increase_sampling(lot['lot_id'], station['station_id'], \"High rework rate\")\n                    break\n        else:\n            plant_api.release_lot(lot['lot_id'], \"No issues detected\")\n\n    plant_api.notify_quality(\"Lot action completed\")\ndecide_lot_action()"
+}

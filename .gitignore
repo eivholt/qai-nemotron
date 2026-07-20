@@ -1,4 +1,6 @@
 .venv-qai/
+.venv-shipping-agent/
+__pycache__/
 20260621T072100Z__hf_nemotron_new_off2048__thinking_off
 20260621T072953Z__hf_nemotron_new_on2048__thinking_on
 20260621T073544Z__hf_stock_new_2048__stock

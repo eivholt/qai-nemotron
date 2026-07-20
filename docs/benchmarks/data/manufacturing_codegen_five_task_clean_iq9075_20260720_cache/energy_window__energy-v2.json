@@ -1,0 +1,119 @@
+{
+  "task": "energy_window",
+  "contract_version": "energy-v2",
+  "contract_hash": "d85af51555c1a82a91fe7c00f48fe38dd045ead0027be3dcacf607373ea2954b",
+  "sandbox_version": "manufacturing-sandbox-v2",
+  "validator_version": "strict-mock-validator-v2",
+  "model": "ministral3-3b-q4",
+  "accepted_at": "2026-07-19T23:44:52.634837+00:00",
+  "promotion_scenarios": [
+    "first_window",
+    "skip_window",
+    "defer"
+  ],
+  "promotion_results": {
+    "first_window": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "energy_window",
+        "scenario": "first_window",
+        "expected": {
+          "action": "scheduled",
+          "target": "W-1"
+        },
+        "actual": {
+          "action": "scheduled",
+          "target": "W-1"
+        },
+        "call_names": [
+          "get_energy_policy",
+          "get_pending_energy_job",
+          "get_candidate_windows",
+          "schedule_energy_job",
+          "notify_energy_desk"
+        ],
+        "expected_calls": [
+          "get_energy_policy",
+          "get_pending_energy_job",
+          "get_candidate_windows",
+          "schedule_energy_job",
+          "notify_energy_desk"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    },
+    "skip_window": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "energy_window",
+        "scenario": "skip_window",
+        "expected": {
+          "action": "scheduled",
+          "target": "W-2"
+        },
+        "actual": {
+          "action": "scheduled",
+          "target": "W-2"
+        },
+        "call_names": [
+          "get_energy_policy",
+          "get_pending_energy_job",
+          "get_candidate_windows",
+          "schedule_energy_job",
+          "notify_energy_desk"
+        ],
+        "expected_calls": [
+          "get_energy_policy",
+          "get_pending_energy_job",
+          "get_candidate_windows",
+          "schedule_energy_job",
+          "notify_energy_desk"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    },
+    "defer": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "energy_window",
+        "scenario": "defer",
+        "expected": {
+          "action": "deferred",
+          "target": "JOB-8"
+        },
+        "actual": {
+          "action": "deferred",
+          "target": "JOB-8"
+        },
+        "call_names": [
+          "get_energy_policy",
+          "get_pending_energy_job",
+          "get_candidate_windows",
+          "defer_energy_job",
+          "notify_energy_desk"
+        ],
+        "expected_calls": [
+          "get_energy_policy",
+          "get_pending_energy_job",
+          "get_candidate_windows",
+          "defer_energy_job",
+          "notify_energy_desk"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    }
+  },
+  "code": "import plant_api\n\ndef schedule_energy_job():\n    policy = plant_api.get_energy_policy()\n    job = plant_api.get_pending_energy_job()\n    windows = plant_api.get_candidate_windows()\n\n    for window in windows['windows']:\n        if (window['price_per_kwh'] <= policy['max_price_per_kwh'] and\n            window['projected_load_kw'] <= policy['max_projected_load_kw'] and\n            window['start_slot'] + job['duration_slots'] <= job['deadline_slot']):\n            plant_api.schedule_energy_job(job['job_id'], window['window_id'])\n            plant_api.notify_energy_desk(f\"Scheduled job {job['job_id']} in window {window['window_id']}\")\n            return\n\n    plant_api.defer_energy_job(job['job_id'], \"No feasible window found\")\n    plant_api.notify_energy_desk(f\"Deferred job {job['job_id']} due to no feasible window\")\n\nschedule_energy_job()"
+}

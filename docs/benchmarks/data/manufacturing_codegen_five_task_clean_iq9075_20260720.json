@@ -1,0 +1,3211 @@
+{
+  "label": "ministral3b_five_task_clean_final",
+  "model": "ministral3-3b-q4",
+  "system_prompt": "You write concise, reusable Python for a sandboxed manufacturing runtime.\nReturn exactly one complete program in one python code block and no other text.\nUse plant_api as the only way to read or change plant state. Derive every decision\nfrom returned data and policy. Never hard-code identifiers, thresholds, or outcomes.\n",
+  "sandbox_contract_version": "manufacturing-sandbox-v2",
+  "validator_contract_version": "strict-mock-validator-v2",
+  "passed": 15,
+  "total": 15,
+  "tasks": {
+    "batch_disposition": {
+      "title": "Batch disposition from quality and machine summaries",
+      "contract_version": "batch-v1",
+      "contract_hash": "e4efea3ea04eee1d2e5fa8519bb929cb20d4104103e0e3c401868fad1f562a02",
+      "prompt": "Write one reusable Python program for this task:\n\nBatch disposition from quality and machine summaries\n\nAvailable plant_api functions:\n- get_production_context(): -> {batch_id: str, machine_ids: list[str]}\n- get_policy(): -> {max_temperature_c: float, max_vibration_rms: float, max_defect_rate: float}\n- get_quality_counts(): -> {inspected: int, defects: int}\n- get_sensor_summary(machine_id): -> {machine_id: str, max_temperature_c: float, vibration_rms: float}\n- schedule_inspection(machine_id, reason): schedule one inspection\n- release_batch(batch_id, evidence): release the active batch\n- hold_batch(batch_id, reason): hold after scheduling inspection\n- quarantine_batch(batch_id, reason): quarantine the active batch\n- notify_supervisor(message): send one final notification\n- APIError is raised automatically when an API operation is rejected.\n\nPolicy:\nRead context, policy, quality, and every machine summary before acting.\nCompute defect_rate = defects / inspected. If it exceeds max_defect_rate,\nquarantine. Otherwise inspect the first machine whose temperature or vibration\nexceeds its matching limit, then hold. If neither condition applies, release.\nChoose exactly one disposition and notify the supervisor exactly once afterward.\n\nUse every return value as the exact dict shape documented above, including its\nnamed list key. Read every required observation before the first state-changing\nAPI call. Do not catch APIError, repeat calls, retry rejected operations, or\nperform extra actions. Put the one final notification after the complete\nif/elif/else decision so every successful outcome reaches it exactly once.\nKeep the program under 120 lines. Import only plant_api. Do not access files,\nsockets, subprocesses, environment variables, or absolute paths directly.\nCall the program's entry function so the task actually runs.\n"
+    },
+    "maintenance_priority": {
+      "title": "Maintenance priority from machine risk",
+      "contract_version": "maintenance-v1",
+      "contract_hash": "c23399698c847e90988c4edc71cac39560a4d409f6017f2a9da1bae7aa42537b",
+      "prompt": "Write one reusable Python program for this task:\n\nMaintenance priority from machine risk\n\nAvailable plant_api functions:\n- get_maintenance_policy(): -> {service_risk: float, critical_risk: float}\n- get_machine_queue(): -> {machine_ids: list[str]} in priority tie order; iterate result['machine_ids']\n- get_machine_health(machine_id): -> {machine_id: str, risk_score: float, production_critical: bool}\n- schedule_maintenance(machine_id, priority, reason): schedule one machine with priority planned or urgent\n- record_monitoring(reason): record that no service is required\n- notify_maintenance(message): send one final notification\n- APIError is raised automatically when an API operation is rejected.\n\nPolicy:\nRead policy, queue, and every machine health record before acting.\nSelect the machine with the highest risk_score; queue order breaks ties. If its\nrisk is at least critical_risk, schedule it as urgent. Otherwise, if its risk is\nat least service_risk, schedule it as planned. Otherwise record monitoring.\nChoose exactly one action and notify maintenance exactly once afterward.\n\nUse every return value as the exact dict shape documented above, including its\nnamed list key. Read every required observation before the first state-changing\nAPI call. Do not catch APIError, repeat calls, retry rejected operations, or\nperform extra actions. Put the one final notification after the complete\nif/elif/else decision so every successful outcome reaches it exactly once.\nKeep the program under 120 lines. Import only plant_api. Do not access files,\nsockets, subprocesses, environment variables, or absolute paths directly.\nCall the program's entry function so the task actually runs.\n"
+    },
+    "quality_sampling": {
+      "title": "Lot release, containment, or increased sampling",
+      "contract_version": "quality-v1",
+      "contract_hash": "358ecf6f2ff10f7f45427c3731870c138a013a4d311c5f1729642e76f22a4175",
+      "prompt": "Write one reusable Python program for this task:\n\nLot release, containment, or increased sampling\n\nAvailable plant_api functions:\n- get_inspection_policy(): -> {max_total_defect_rate: float, max_station_rework_rate: float}\n- get_active_lot(): -> {lot_id: str, station_ids: list[str]}; iterate result['station_ids']\n- get_station_quality(station_id): -> {station_id: str, inspected: int, defects: int, rework: int}\n- quarantine_lot(lot_id, reason): quarantine the active lot\n- increase_sampling(lot_id, station_id, reason): increase sampling for one station\n- release_lot(lot_id, evidence): release the active lot\n- notify_quality(message): send one final notification\n- APIError is raised automatically when an API operation is rejected.\n\nPolicy:\nRead policy, lot, and every station quality record before acting.\nCompute total_defect_rate from summed defects divided by summed inspected. If it\nexceeds max_total_defect_rate, quarantine the lot. Otherwise find the first\nstation in lot order whose rework / inspected exceeds max_station_rework_rate\nand increase sampling there. If neither applies, release the lot. Choose exactly\none action and notify quality exactly once afterward.\n\nUse every return value as the exact dict shape documented above, including its\nnamed list key. Read every required observation before the first state-changing\nAPI call. Do not catch APIError, repeat calls, retry rejected operations, or\nperform extra actions. Put the one final notification after the complete\nif/elif/else decision so every successful outcome reaches it exactly once.\nKeep the program under 120 lines. Import only plant_api. Do not access files,\nsockets, subprocesses, environment variables, or absolute paths directly.\nCall the program's entry function so the task actually runs.\n"
+    },
+    "energy_window": {
+      "title": "Energy-aware production-window scheduling",
+      "contract_version": "energy-v2",
+      "contract_hash": "d85af51555c1a82a91fe7c00f48fe38dd045ead0027be3dcacf607373ea2954b",
+      "prompt": "Write one reusable Python program for this task:\n\nEnergy-aware production-window scheduling\n\nAvailable plant_api functions:\n- get_energy_policy(): -> {max_price_per_kwh: float, max_projected_load_kw: float}\n- get_pending_energy_job(): -> {job_id: str, duration_slots: int, deadline_slot: int}\n- get_candidate_windows(): -> {windows: list[dict]}; iterate result['windows']; each window has window_id, start_slot, price_per_kwh, and projected_load_kw\n- schedule_energy_job(job_id, window_id): schedule one feasible window\n- defer_energy_job(job_id, reason): defer when no window is feasible\n- notify_energy_desk(message): send one final notification\n- APIError is raised automatically when an API operation is rejected.\n\nPolicy:\nRead policy, pending job, and all candidate windows before acting.\nThe windows are already ordered by start_slot. A window is feasible exactly when\nwindow[\"price_per_kwh\"] <= policy[\"max_price_per_kwh\"],\nwindow[\"projected_load_kw\"] <= policy[\"max_projected_load_kw\"], and\nwindow[\"start_slot\"] + job[\"duration_slots\"] <= job[\"deadline_slot\"].\nduration_slots belongs to the job and is not a window field. Schedule the first\nfeasible window. If none is feasible, defer the job. Choose exactly one action\nand notify the energy desk exactly once afterward.\n\nUse every return value as the exact dict shape documented above, including its\nnamed list key. Read every required observation before the first state-changing\nAPI call. Do not catch APIError, repeat calls, retry rejected operations, or\nperform extra actions. Put the one final notification after the complete\nif/elif/else decision so every successful outcome reaches it exactly once.\nKeep the program under 120 lines. Import only plant_api. Do not access files,\nsockets, subprocesses, environment variables, or absolute paths directly.\nCall the program's entry function so the task actually runs.\n"
+    },
+    "spares_replenishment": {
+      "title": "Spare-parts replenishment and shortage escalation",
+      "contract_version": "inventory-v1",
+      "contract_hash": "fe75c13ed20cb3d8ad3361ddb32c860cdde5936dc5755c24b45e30f44f45f457",
+      "prompt": "Write one reusable Python program for this task:\n\nSpare-parts replenishment and shortage escalation\n\nAvailable plant_api functions:\n- get_required_part(): -> {part_id: str, on_hand: int, required_quantity: int, needed_in_days: int}\n- get_supplier_options(): -> {suppliers: list[dict]}; iterate result['suppliers']; each supplier has supplier_id, available_quantity, and lead_days\n- record_inventory_ok(part_id, evidence): record that stock is sufficient\n- create_purchase_order(part_id, supplier_id, quantity): order the exact shortage from the first feasible supplier\n- escalate_shortage(part_id, reason): escalate when no supplier is feasible\n- notify_inventory(message): send one final notification\n- APIError is raised automatically when an API operation is rejected.\n\nPolicy:\nRead the required part and every supplier option before acting.\nshortage = max(required_quantity - on_hand, 0). If shortage is zero, record that\ninventory is sufficient. Otherwise choose the first supplier whose available\nquantity covers the shortage and whose lead_days is at most needed_in_days, and\norder exactly the shortage. If no supplier is feasible, escalate the shortage.\nChoose exactly one action and notify inventory exactly once afterward.\n\nUse every return value as the exact dict shape documented above, including its\nnamed list key. Read every required observation before the first state-changing\nAPI call. Do not catch APIError, repeat calls, retry rejected operations, or\nperform extra actions. Put the one final notification after the complete\nif/elif/else decision so every successful outcome reaches it exactly once.\nKeep the program under 120 lines. Import only plant_api. Do not access files,\nsockets, subprocesses, environment variables, or absolute paths directly.\nCall the program's entry function so the task actually runs.\n"
+    }
+  },
+  "results": [
+    {
+      "task": "batch_disposition",
+      "scenario": "normal",
+      "passed": true,
+      "cache_hit": false,
+      "model_called": true,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/batch_disposition__batch-v1.json",
+        "status": "not_found",
+        "contract_hash": "e4efea3ea04eee1d2e5fa8519bb929cb20d4104103e0e3c401868fad1f562a02"
+      },
+      "code": "import plant_api\n\ndef batch_disposition():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_data = {m: plant_api.get_sensor_summary(m) for m in context[\"machine_ids\"]}\n\n    defect_rate = quality[\"defects\"] / quality[\"inspected\"] if quality[\"inspected\"] > 0 else 0\n    if defect_rate > policy[\"max_defect_rate\"]:\n        plant_api.quarantine_batch(context[\"batch_id\"], \"high_defect_rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy threshold.\")\n    else:\n        inspected_machine = None\n        for machine in context[\"machine_ids\"]:\n            sensor = machine_data[machine]\n            if sensor[\"max_temperature_c\"] > policy[\"max_temperature_c\"] or sensor[\"vibration_rms\"] > policy[\"max_vibration_rms\"]:\n                inspected_machine = machine\n                plant_api.schedule_inspection(machine, \"machine_violation\")\n                break\n        if inspected_machine:\n            plant_api.hold_batch(context[\"batch_id\"], f\"machine_{inspected_machine}_violation\")\n            plant_api.notify_supervisor(f\"Batch held due to machine {inspected_machine} exceeding limits.\")\n        else:\n            plant_api.release_batch(context[\"batch_id\"], \"no_violations\")\n            plant_api.notify_supervisor(\"Batch released as all conditions met.\")\n\nbatch_disposition()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "batch_disposition",
+          "scenario": "normal",
+          "expected": {
+            "action": "released",
+            "target": "BATCH-100"
+          },
+          "actual": {
+            "action": "released",
+            "target": "BATCH-100"
+          },
+          "call_names": [
+            "get_production_context",
+            "get_policy",
+            "get_quality_counts",
+            "get_sensor_summary",
+            "get_sensor_summary",
+            "release_batch",
+            "notify_supervisor"
+          ],
+          "expected_calls": [
+            "get_production_context",
+            "get_policy",
+            "get_quality_counts",
+            "get_sensor_summary",
+            "get_sensor_summary",
+            "release_batch",
+            "notify_supervisor"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "promotion": {
+        "normal": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "batch_disposition",
+            "scenario": "normal",
+            "expected": {
+              "action": "released",
+              "target": "BATCH-100"
+            },
+            "actual": {
+              "action": "released",
+              "target": "BATCH-100"
+            },
+            "call_names": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "release_batch",
+              "notify_supervisor"
+            ],
+            "expected_calls": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "release_batch",
+              "notify_supervisor"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        },
+        "vibration": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "batch_disposition",
+            "scenario": "vibration",
+            "expected": {
+              "action": "held",
+              "target": "CELL-2"
+            },
+            "actual": {
+              "action": "held",
+              "target": "CELL-2"
+            },
+            "call_names": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "schedule_inspection",
+              "hold_batch",
+              "notify_supervisor"
+            ],
+            "expected_calls": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "schedule_inspection",
+              "hold_batch",
+              "notify_supervisor"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        },
+        "quality_spike": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "batch_disposition",
+            "scenario": "quality_spike",
+            "expected": {
+              "action": "quarantined",
+              "target": "BATCH-403"
+            },
+            "actual": {
+              "action": "quarantined",
+              "target": "BATCH-403"
+            },
+            "call_names": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "quarantine_batch",
+              "notify_supervisor"
+            ],
+            "expected_calls": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "quarantine_batch",
+              "notify_supervisor"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "elapsed_s": 61.685,
+          "raw_text": "```python\nimport plant_api\n\ndef batch_disposition():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_data = {m: plant_api.get_sensor_summary(m) for m in context[\"machine_ids\"]}\n\n    defect_rate = quality[\"defects\"] / quality[\"inspected\"] if quality[\"inspected\"] > 0 else 0\n    if defect_rate > policy[\"max_defect_rate\"]:\n        plant_api.quarantine_batch(context[\"batch_id\"], \"high_defect_rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy threshold.\")\n    else:\n        for machine in context[\"machine_ids\"]:\n            sensor = machine_data[machine]\n            if sensor[\"max_temperature_c\"] > policy[\"max_temperature_c\"] or sensor[\"vibration_rms\"] > policy[\"max_vibration_rms\"]:\n                plant_api.hold_batch(context[\"batch_id\"], f\"machine_{machine}_violation\")\n                plant_api.notify_supervisor(f\"Batch held due to machine {machine} exceeding limits.\")\n                break\n        else:\n            plant_api.release_batch(context[\"batch_id\"], \"no_violations\")\n            plant_api.notify_supervisor(\"Batch released as all conditions met.\")\n\nbatch_disposition()\n```",
+          "code": "import plant_api\n\ndef batch_disposition():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_data = {m: plant_api.get_sensor_summary(m) for m in context[\"machine_ids\"]}\n\n    defect_rate = quality[\"defects\"] / quality[\"inspected\"] if quality[\"inspected\"] > 0 else 0\n    if defect_rate > policy[\"max_defect_rate\"]:\n        plant_api.quarantine_batch(context[\"batch_id\"], \"high_defect_rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy threshold.\")\n    else:\n        for machine in context[\"machine_ids\"]:\n            sensor = machine_data[machine]\n            if sensor[\"max_temperature_c\"] > policy[\"max_temperature_c\"] or sensor[\"vibration_rms\"] > policy[\"max_vibration_rms\"]:\n                plant_api.hold_batch(context[\"batch_id\"], f\"machine_{machine}_violation\")\n                plant_api.notify_supervisor(f\"Batch held due to machine {machine} exceeding limits.\")\n                break\n        else:\n            plant_api.release_batch(context[\"batch_id\"], \"no_violations\")\n            plant_api.notify_supervisor(\"Batch released as all conditions met.\")\n\nbatch_disposition()",
+          "promotion_passed": false,
+          "validations": {
+            "normal": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "batch_disposition",
+                "scenario": "normal",
+                "expected": {
+                  "action": "released",
+                  "target": "BATCH-100"
+                },
+                "actual": {
+                  "action": "released",
+                  "target": "BATCH-100"
+                },
+                "call_names": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "release_batch",
+                  "notify_supervisor"
+                ],
+                "expected_calls": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "release_batch",
+                  "notify_supervisor"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "vibration": {
+              "passed": false,
+              "failure": "runtime_error",
+              "source_errors": [],
+              "execution": {
+                "ok": false,
+                "returncode": 1,
+                "stdout": "",
+                "stderr": "Traceback (most recent call last):\n  File \"/tmp/manufacturing_suite__batch_disposition__vibration__2z8j0ab8/candidate.py\", line 24, in <module>\n    batch_disposition()\n  File \"/tmp/manufacturing_suite__batch_disposition__vibration__2z8j0ab8/candidate.py\", line 17, in batch_disposition\n    plant_api.hold_batch(context[\"batch_id\"], f\"machine_{machine}_violation\")\n  File \"/tmp/manufacturing_suite__batch_disposition__vibration__2z8j0ab8/plant_api.py\", line 43, in hold_batch\n    return _call('hold_batch', {'batch_id': batch_id, 'reason': reason})\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/manufacturing_suite__batch_disposition__vibration__2z8j0ab8/plant_api.py\", line 21, in _call\n    raise APIError(result)\nplant_api.APIError: {'error': 'inspection_required_before_hold', 'ok': False}\n"
+              },
+              "summary": {
+                "passed": false,
+                "task": "batch_disposition",
+                "scenario": "vibration",
+                "expected": {
+                  "action": "held",
+                  "target": "CELL-2"
+                },
+                "actual": {
+                  "action": null,
+                  "target": null
+                },
+                "call_names": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "hold_batch"
+                ],
+                "expected_calls": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "schedule_inspection",
+                  "hold_batch",
+                  "notify_supervisor"
+                ],
+                "trace_correct": false,
+                "state_correct": false,
+                "notified": false,
+                "tool_errors": [
+                  {
+                    "name": "hold_batch",
+                    "error": "inspection_required_before_hold"
+                  }
+                ]
+              }
+            },
+            "quality_spike": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "batch_disposition",
+                "scenario": "quality_spike",
+                "expected": {
+                  "action": "quarantined",
+                  "target": "BATCH-403"
+                },
+                "actual": {
+                  "action": "quarantined",
+                  "target": "BATCH-403"
+                },
+                "call_names": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "quarantine_batch",
+                  "notify_supervisor"
+                ],
+                "expected_calls": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "quarantine_batch",
+                  "notify_supervisor"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            }
+          }
+        },
+        {
+          "attempt": 2,
+          "elapsed_s": 74.768,
+          "raw_text": "```python\nimport plant_api\n\ndef batch_disposition():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_data = {m: plant_api.get_sensor_summary(m) for m in context[\"machine_ids\"]}\n\n    defect_rate = quality[\"defects\"] / quality[\"inspected\"] if quality[\"inspected\"] > 0 else 0\n    if defect_rate > policy[\"max_defect_rate\"]:\n        plant_api.quarantine_batch(context[\"batch_id\"], \"high_defect_rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy threshold.\")\n    else:\n        inspected_machine = None\n        for machine in context[\"machine_ids\"]:\n            sensor = machine_data[machine]\n            if sensor[\"max_temperature_c\"] > policy[\"max_temperature_c\"] or sensor[\"vibration_rms\"] > policy[\"max_vibration_rms\"]:\n                inspected_machine = machine\n                plant_api.schedule_inspection(machine, \"machine_violation\")\n                break\n        if inspected_machine:\n            plant_api.hold_batch(context[\"batch_id\"], f\"machine_{inspected_machine}_violation\")\n            plant_api.notify_supervisor(f\"Batch held due to machine {inspected_machine} exceeding limits.\")\n        else:\n            plant_api.release_batch(context[\"batch_id\"], \"no_violations\")\n            plant_api.notify_supervisor(\"Batch released as all conditions met.\")\n\nbatch_disposition()\n```",
+          "code": "import plant_api\n\ndef batch_disposition():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_data = {m: plant_api.get_sensor_summary(m) for m in context[\"machine_ids\"]}\n\n    defect_rate = quality[\"defects\"] / quality[\"inspected\"] if quality[\"inspected\"] > 0 else 0\n    if defect_rate > policy[\"max_defect_rate\"]:\n        plant_api.quarantine_batch(context[\"batch_id\"], \"high_defect_rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy threshold.\")\n    else:\n        inspected_machine = None\n        for machine in context[\"machine_ids\"]:\n            sensor = machine_data[machine]\n            if sensor[\"max_temperature_c\"] > policy[\"max_temperature_c\"] or sensor[\"vibration_rms\"] > policy[\"max_vibration_rms\"]:\n                inspected_machine = machine\n                plant_api.schedule_inspection(machine, \"machine_violation\")\n                break\n        if inspected_machine:\n            plant_api.hold_batch(context[\"batch_id\"], f\"machine_{inspected_machine}_violation\")\n            plant_api.notify_supervisor(f\"Batch held due to machine {inspected_machine} exceeding limits.\")\n        else:\n            plant_api.release_batch(context[\"batch_id\"], \"no_violations\")\n            plant_api.notify_supervisor(\"Batch released as all conditions met.\")\n\nbatch_disposition()",
+          "promotion_passed": true,
+          "validations": {
+            "normal": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "batch_disposition",
+                "scenario": "normal",
+                "expected": {
+                  "action": "released",
+                  "target": "BATCH-100"
+                },
+                "actual": {
+                  "action": "released",
+                  "target": "BATCH-100"
+                },
+                "call_names": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "release_batch",
+                  "notify_supervisor"
+                ],
+                "expected_calls": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "release_batch",
+                  "notify_supervisor"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "vibration": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "batch_disposition",
+                "scenario": "vibration",
+                "expected": {
+                  "action": "held",
+                  "target": "CELL-2"
+                },
+                "actual": {
+                  "action": "held",
+                  "target": "CELL-2"
+                },
+                "call_names": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "schedule_inspection",
+                  "hold_batch",
+                  "notify_supervisor"
+                ],
+                "expected_calls": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "schedule_inspection",
+                  "hold_batch",
+                  "notify_supervisor"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "quality_spike": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "batch_disposition",
+                "scenario": "quality_spike",
+                "expected": {
+                  "action": "quarantined",
+                  "target": "BATCH-403"
+                },
+                "actual": {
+                  "action": "quarantined",
+                  "target": "BATCH-403"
+                },
+                "call_names": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "quarantine_batch",
+                  "notify_supervisor"
+                ],
+                "expected_calls": [
+                  "get_production_context",
+                  "get_policy",
+                  "get_quality_counts",
+                  "get_sensor_summary",
+                  "get_sensor_summary",
+                  "quarantine_batch",
+                  "notify_supervisor"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "task": "batch_disposition",
+      "scenario": "vibration",
+      "passed": true,
+      "cache_hit": true,
+      "model_called": false,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/batch_disposition__batch-v1.json",
+        "status": "contract_match",
+        "contract_hash": "e4efea3ea04eee1d2e5fa8519bb929cb20d4104103e0e3c401868fad1f562a02",
+        "fresh_validation": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "batch_disposition",
+            "scenario": "vibration",
+            "expected": {
+              "action": "held",
+              "target": "CELL-2"
+            },
+            "actual": {
+              "action": "held",
+              "target": "CELL-2"
+            },
+            "call_names": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "schedule_inspection",
+              "hold_batch",
+              "notify_supervisor"
+            ],
+            "expected_calls": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "schedule_inspection",
+              "hold_batch",
+              "notify_supervisor"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "code": "import plant_api\n\ndef batch_disposition():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_data = {m: plant_api.get_sensor_summary(m) for m in context[\"machine_ids\"]}\n\n    defect_rate = quality[\"defects\"] / quality[\"inspected\"] if quality[\"inspected\"] > 0 else 0\n    if defect_rate > policy[\"max_defect_rate\"]:\n        plant_api.quarantine_batch(context[\"batch_id\"], \"high_defect_rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy threshold.\")\n    else:\n        inspected_machine = None\n        for machine in context[\"machine_ids\"]:\n            sensor = machine_data[machine]\n            if sensor[\"max_temperature_c\"] > policy[\"max_temperature_c\"] or sensor[\"vibration_rms\"] > policy[\"max_vibration_rms\"]:\n                inspected_machine = machine\n                plant_api.schedule_inspection(machine, \"machine_violation\")\n                break\n        if inspected_machine:\n            plant_api.hold_batch(context[\"batch_id\"], f\"machine_{inspected_machine}_violation\")\n            plant_api.notify_supervisor(f\"Batch held due to machine {inspected_machine} exceeding limits.\")\n        else:\n            plant_api.release_batch(context[\"batch_id\"], \"no_violations\")\n            plant_api.notify_supervisor(\"Batch released as all conditions met.\")\n\nbatch_disposition()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "batch_disposition",
+          "scenario": "vibration",
+          "expected": {
+            "action": "held",
+            "target": "CELL-2"
+          },
+          "actual": {
+            "action": "held",
+            "target": "CELL-2"
+          },
+          "call_names": [
+            "get_production_context",
+            "get_policy",
+            "get_quality_counts",
+            "get_sensor_summary",
+            "get_sensor_summary",
+            "schedule_inspection",
+            "hold_batch",
+            "notify_supervisor"
+          ],
+          "expected_calls": [
+            "get_production_context",
+            "get_policy",
+            "get_quality_counts",
+            "get_sensor_summary",
+            "get_sensor_summary",
+            "schedule_inspection",
+            "hold_batch",
+            "notify_supervisor"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "attempts": []
+    },
+    {
+      "task": "batch_disposition",
+      "scenario": "quality_spike",
+      "passed": true,
+      "cache_hit": true,
+      "model_called": false,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/batch_disposition__batch-v1.json",
+        "status": "contract_match",
+        "contract_hash": "e4efea3ea04eee1d2e5fa8519bb929cb20d4104103e0e3c401868fad1f562a02",
+        "fresh_validation": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "batch_disposition",
+            "scenario": "quality_spike",
+            "expected": {
+              "action": "quarantined",
+              "target": "BATCH-403"
+            },
+            "actual": {
+              "action": "quarantined",
+              "target": "BATCH-403"
+            },
+            "call_names": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "quarantine_batch",
+              "notify_supervisor"
+            ],
+            "expected_calls": [
+              "get_production_context",
+              "get_policy",
+              "get_quality_counts",
+              "get_sensor_summary",
+              "get_sensor_summary",
+              "quarantine_batch",
+              "notify_supervisor"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "code": "import plant_api\n\ndef batch_disposition():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_data = {m: plant_api.get_sensor_summary(m) for m in context[\"machine_ids\"]}\n\n    defect_rate = quality[\"defects\"] / quality[\"inspected\"] if quality[\"inspected\"] > 0 else 0\n    if defect_rate > policy[\"max_defect_rate\"]:\n        plant_api.quarantine_batch(context[\"batch_id\"], \"high_defect_rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy threshold.\")\n    else:\n        inspected_machine = None\n        for machine in context[\"machine_ids\"]:\n            sensor = machine_data[machine]\n            if sensor[\"max_temperature_c\"] > policy[\"max_temperature_c\"] or sensor[\"vibration_rms\"] > policy[\"max_vibration_rms\"]:\n                inspected_machine = machine\n                plant_api.schedule_inspection(machine, \"machine_violation\")\n                break\n        if inspected_machine:\n            plant_api.hold_batch(context[\"batch_id\"], f\"machine_{inspected_machine}_violation\")\n            plant_api.notify_supervisor(f\"Batch held due to machine {inspected_machine} exceeding limits.\")\n        else:\n            plant_api.release_batch(context[\"batch_id\"], \"no_violations\")\n            plant_api.notify_supervisor(\"Batch released as all conditions met.\")\n\nbatch_disposition()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "batch_disposition",
+          "scenario": "quality_spike",
+          "expected": {
+            "action": "quarantined",
+            "target": "BATCH-403"
+          },
+          "actual": {
+            "action": "quarantined",
+            "target": "BATCH-403"
+          },
+          "call_names": [
+            "get_production_context",
+            "get_policy",
+            "get_quality_counts",
+            "get_sensor_summary",
+            "get_sensor_summary",
+            "quarantine_batch",
+            "notify_supervisor"
+          ],
+          "expected_calls": [
+            "get_production_context",
+            "get_policy",
+            "get_quality_counts",
+            "get_sensor_summary",
+            "get_sensor_summary",
+            "quarantine_batch",
+            "notify_supervisor"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "attempts": []
+    },
+    {
+      "task": "maintenance_priority",
+      "scenario": "monitor",
+      "passed": true,
+      "cache_hit": false,
+      "model_called": true,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/maintenance_priority__maintenance-v1.json",
+        "status": "not_found",
+        "contract_hash": "c23399698c847e90988c4edc71cac39560a4d409f6017f2a9da1bae7aa42537b"
+      },
+      "code": "import plant_api\n\ndef run_maintenance_priority():\n    policy = plant_api.get_maintenance_policy()\n    queue = plant_api.get_machine_queue()\n    highest_risk_machine = None\n    highest_risk = -1.0\n\n    for machine_id in queue['machine_ids']:\n        health = plant_api.get_machine_health(machine_id)\n        if health['risk_score'] > highest_risk:\n            highest_risk = health['risk_score']\n            highest_risk_machine = health\n\n    if highest_risk_machine:\n        if highest_risk >= policy['critical_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'urgent', 'high risk detected')\n        elif highest_risk >= policy['service_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'planned', 'service required')\n        else:\n            plant_api.record_monitoring('no service needed')\n        plant_api.notify_maintenance(f\"Action taken for {highest_risk_machine['machine_id']}\")\n\nrun_maintenance_priority()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "maintenance_priority",
+          "scenario": "monitor",
+          "expected": {
+            "action": "monitoring",
+            "target": null,
+            "priority": null
+          },
+          "actual": {
+            "action": "monitoring",
+            "target": null,
+            "priority": null
+          },
+          "call_names": [
+            "get_maintenance_policy",
+            "get_machine_queue",
+            "get_machine_health",
+            "get_machine_health",
+            "get_machine_health",
+            "record_monitoring",
+            "notify_maintenance"
+          ],
+          "expected_calls": [
+            "get_maintenance_policy",
+            "get_machine_queue",
+            "get_machine_health",
+            "get_machine_health",
+            "get_machine_health",
+            "record_monitoring",
+            "notify_maintenance"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "promotion": {
+        "monitor": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "maintenance_priority",
+            "scenario": "monitor",
+            "expected": {
+              "action": "monitoring",
+              "target": null,
+              "priority": null
+            },
+            "actual": {
+              "action": "monitoring",
+              "target": null,
+              "priority": null
+            },
+            "call_names": [
+              "get_maintenance_policy",
+              "get_machine_queue",
+              "get_machine_health",
+              "get_machine_health",
+              "get_machine_health",
+              "record_monitoring",
+              "notify_maintenance"
+            ],
+            "expected_calls": [
+              "get_maintenance_policy",
+              "get_machine_queue",
+              "get_machine_health",
+              "get_machine_health",
+              "get_machine_health",
+              "record_monitoring",
+              "notify_maintenance"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        },
+        "planned": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "maintenance_priority",
+            "scenario": "planned",
+            "expected": {
+              "action": "maintenance",
+              "target": "M-30",
+              "priority": "planned"
+            },
+            "actual": {
+              "action": "maintenance",
+              "target": "M-30",
+              "priority": "planned"
+            },
+            "call_names": [
+              "get_maintenance_policy",
+              "get_machine_queue",
+              "get_machine_health",
+              "get_machine_health",
+              "get_machine_health",
+              "schedule_maintenance",
+              "notify_maintenance"
+            ],
+            "expected_calls": [
+              "get_maintenance_policy",
+              "get_machine_queue",
+              "get_machine_health",
+              "get_machine_health",
+              "get_machine_health",
+              "schedule_maintenance",
+              "notify_maintenance"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        },
+        "urgent": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "maintenance_priority",
+            "scenario": "urgent",
+            "expected": {
+              "action": "maintenance",
+              "target": "M-20",
+              "priority": "urgent"
+            },
+            "actual": {
+              "action": "maintenance",
+              "target": "M-20",
+              "priority": "urgent"
+            },
+            "call_names": [
+              "get_maintenance_policy",
+              "get_machine_queue",
+              "get_machine_health",
+              "get_machine_health",
+              "get_machine_health",
+              "schedule_maintenance",
+              "notify_maintenance"
+            ],
+            "expected_calls": [
+              "get_maintenance_policy",
+              "get_machine_queue",
+              "get_machine_health",
+              "get_machine_health",
+              "get_machine_health",
+              "schedule_maintenance",
+              "notify_maintenance"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "elapsed_s": 51.929,
+          "raw_text": "```python\nimport plant_api\n\ndef run_maintenance_priority():\n    policy = plant_api.get_maintenance_policy()\n    queue = plant_api.get_machine_queue()\n    highest_risk_machine = None\n    highest_risk = -1.0\n\n    for machine_id in queue['machine_ids']:\n        health = plant_api.get_machine_health(machine_id)\n        if health['risk_score'] > highest_risk:\n            highest_risk = health['risk_score']\n            highest_risk_machine = health\n\n    if highest_risk_machine:\n        if highest_risk >= policy['critical_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'urgent', 'high risk detected')\n        elif highest_risk >= policy['service_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'planned', 'service required')\n        else:\n            plant_api.record_monitoring('no service needed')\n        plant_api.notify_maintenance(f\"Action taken for {highest_risk_machine['machine_id']}\")\n\nrun_maintenance_priority()\n```",
+          "code": "import plant_api\n\ndef run_maintenance_priority():\n    policy = plant_api.get_maintenance_policy()\n    queue = plant_api.get_machine_queue()\n    highest_risk_machine = None\n    highest_risk = -1.0\n\n    for machine_id in queue['machine_ids']:\n        health = plant_api.get_machine_health(machine_id)\n        if health['risk_score'] > highest_risk:\n            highest_risk = health['risk_score']\n            highest_risk_machine = health\n\n    if highest_risk_machine:\n        if highest_risk >= policy['critical_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'urgent', 'high risk detected')\n        elif highest_risk >= policy['service_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'planned', 'service required')\n        else:\n            plant_api.record_monitoring('no service needed')\n        plant_api.notify_maintenance(f\"Action taken for {highest_risk_machine['machine_id']}\")\n\nrun_maintenance_priority()",
+          "promotion_passed": true,
+          "validations": {
+            "monitor": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "maintenance_priority",
+                "scenario": "monitor",
+                "expected": {
+                  "action": "monitoring",
+                  "target": null,
+                  "priority": null
+                },
+                "actual": {
+                  "action": "monitoring",
+                  "target": null,
+                  "priority": null
+                },
+                "call_names": [
+                  "get_maintenance_policy",
+                  "get_machine_queue",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "record_monitoring",
+                  "notify_maintenance"
+                ],
+                "expected_calls": [
+                  "get_maintenance_policy",
+                  "get_machine_queue",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "record_monitoring",
+                  "notify_maintenance"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "planned": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "maintenance_priority",
+                "scenario": "planned",
+                "expected": {
+                  "action": "maintenance",
+                  "target": "M-30",
+                  "priority": "planned"
+                },
+                "actual": {
+                  "action": "maintenance",
+                  "target": "M-30",
+                  "priority": "planned"
+                },
+                "call_names": [
+                  "get_maintenance_policy",
+                  "get_machine_queue",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "schedule_maintenance",
+                  "notify_maintenance"
+                ],
+                "expected_calls": [
+                  "get_maintenance_policy",
+                  "get_machine_queue",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "schedule_maintenance",
+                  "notify_maintenance"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "urgent": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "maintenance_priority",
+                "scenario": "urgent",
+                "expected": {
+                  "action": "maintenance",
+                  "target": "M-20",
+                  "priority": "urgent"
+                },
+                "actual": {
+                  "action": "maintenance",
+                  "target": "M-20",
+                  "priority": "urgent"
+                },
+                "call_names": [
+                  "get_maintenance_policy",
+                  "get_machine_queue",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "schedule_maintenance",
+                  "notify_maintenance"
+                ],
+                "expected_calls": [
+                  "get_maintenance_policy",
+                  "get_machine_queue",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "get_machine_health",
+                  "schedule_maintenance",
+                  "notify_maintenance"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "task": "maintenance_priority",
+      "scenario": "planned",
+      "passed": true,
+      "cache_hit": true,
+      "model_called": false,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/maintenance_priority__maintenance-v1.json",
+        "status": "contract_match",
+        "contract_hash": "c23399698c847e90988c4edc71cac39560a4d409f6017f2a9da1bae7aa42537b",
+        "fresh_validation": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "maintenance_priority",
+            "scenario": "planned",
+            "expected": {
+              "action": "maintenance",
+              "target": "M-30",
+              "priority": "planned"
+            },
+            "actual": {
+              "action": "maintenance",
+              "target": "M-30",
+              "priority": "planned"
+            },
+            "call_names": [
+              "get_maintenance_policy",
+              "get_machine_queue",
+              "get_machine_health",
+              "get_machine_health",
+              "get_machine_health",
+              "schedule_maintenance",
+              "notify_maintenance"
+            ],
+            "expected_calls": [
+              "get_maintenance_policy",
+              "get_machine_queue",
+              "get_machine_health",
+              "get_machine_health",
+              "get_machine_health",
+              "schedule_maintenance",
+              "notify_maintenance"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "code": "import plant_api\n\ndef run_maintenance_priority():\n    policy = plant_api.get_maintenance_policy()\n    queue = plant_api.get_machine_queue()\n    highest_risk_machine = None\n    highest_risk = -1.0\n\n    for machine_id in queue['machine_ids']:\n        health = plant_api.get_machine_health(machine_id)\n        if health['risk_score'] > highest_risk:\n            highest_risk = health['risk_score']\n            highest_risk_machine = health\n\n    if highest_risk_machine:\n        if highest_risk >= policy['critical_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'urgent', 'high risk detected')\n        elif highest_risk >= policy['service_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'planned', 'service required')\n        else:\n            plant_api.record_monitoring('no service needed')\n        plant_api.notify_maintenance(f\"Action taken for {highest_risk_machine['machine_id']}\")\n\nrun_maintenance_priority()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "maintenance_priority",
+          "scenario": "planned",
+          "expected": {
+            "action": "maintenance",
+            "target": "M-30",
+            "priority": "planned"
+          },
+          "actual": {
+            "action": "maintenance",
+            "target": "M-30",
+            "priority": "planned"
+          },
+          "call_names": [
+            "get_maintenance_policy",
+            "get_machine_queue",
+            "get_machine_health",
+            "get_machine_health",
+            "get_machine_health",
+            "schedule_maintenance",
+            "notify_maintenance"
+          ],
+          "expected_calls": [
+            "get_maintenance_policy",
+            "get_machine_queue",
+            "get_machine_health",
+            "get_machine_health",
+            "get_machine_health",
+            "schedule_maintenance",
+            "notify_maintenance"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "attempts": []
+    },
+    {
+      "task": "maintenance_priority",
+      "scenario": "urgent",
+      "passed": true,
+      "cache_hit": true,
+      "model_called": false,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/maintenance_priority__maintenance-v1.json",
+        "status": "contract_match",
+        "contract_hash": "c23399698c847e90988c4edc71cac39560a4d409f6017f2a9da1bae7aa42537b",
+        "fresh_validation": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "maintenance_priority",
+            "scenario": "urgent",
+            "expected": {
+              "action": "maintenance",
+              "target": "M-20",
+              "priority": "urgent"
+            },
+            "actual": {
+              "action": "maintenance",
+              "target": "M-20",
+              "priority": "urgent"
+            },
+            "call_names": [
+              "get_maintenance_policy",
+              "get_machine_queue",
+              "get_machine_health",
+              "get_machine_health",
+              "get_machine_health",
+              "schedule_maintenance",
+              "notify_maintenance"
+            ],
+            "expected_calls": [
+              "get_maintenance_policy",
+              "get_machine_queue",
+              "get_machine_health",
+              "get_machine_health",
+              "get_machine_health",
+              "schedule_maintenance",
+              "notify_maintenance"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "code": "import plant_api\n\ndef run_maintenance_priority():\n    policy = plant_api.get_maintenance_policy()\n    queue = plant_api.get_machine_queue()\n    highest_risk_machine = None\n    highest_risk = -1.0\n\n    for machine_id in queue['machine_ids']:\n        health = plant_api.get_machine_health(machine_id)\n        if health['risk_score'] > highest_risk:\n            highest_risk = health['risk_score']\n            highest_risk_machine = health\n\n    if highest_risk_machine:\n        if highest_risk >= policy['critical_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'urgent', 'high risk detected')\n        elif highest_risk >= policy['service_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'planned', 'service required')\n        else:\n            plant_api.record_monitoring('no service needed')\n        plant_api.notify_maintenance(f\"Action taken for {highest_risk_machine['machine_id']}\")\n\nrun_maintenance_priority()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "maintenance_priority",
+          "scenario": "urgent",
+          "expected": {
+            "action": "maintenance",
+            "target": "M-20",
+            "priority": "urgent"
+          },
+          "actual": {
+            "action": "maintenance",
+            "target": "M-20",
+            "priority": "urgent"
+          },
+          "call_names": [
+            "get_maintenance_policy",
+            "get_machine_queue",
+            "get_machine_health",
+            "get_machine_health",
+            "get_machine_health",
+            "schedule_maintenance",
+            "notify_maintenance"
+          ],
+          "expected_calls": [
+            "get_maintenance_policy",
+            "get_machine_queue",
+            "get_machine_health",
+            "get_machine_health",
+            "get_machine_health",
+            "schedule_maintenance",
+            "notify_maintenance"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "attempts": []
+    },
+    {
+      "task": "quality_sampling",
+      "scenario": "release",
+      "passed": true,
+      "cache_hit": false,
+      "model_called": true,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/quality_sampling__quality-v1.json",
+        "status": "not_found",
+        "contract_hash": "358ecf6f2ff10f7f45427c3731870c138a013a4d311c5f1729642e76f22a4175"
+      },
+      "code": "import plant_api\n\ndef decide_lot_action():\n    policy = plant_api.get_inspection_policy()\n    lot = plant_api.get_active_lot()\n    stations = [plant_api.get_station_quality(st) for st in lot['station_ids']]\n\n    total_inspected = sum(station['inspected'] for station in stations)\n    total_defects = sum(station['defects'] for station in stations)\n    total_defect_rate = total_defects / total_inspected if total_inspected > 0 else 0\n\n    if total_defect_rate > policy['max_total_defect_rate']:\n        plant_api.quarantine_lot(lot['lot_id'], \"High defect rate\")\n    else:\n        max_rework = max(station['rework'] / station['inspected'] for station in stations if station['inspected'] > 0)\n        if max_rework > policy['max_station_rework_rate']:\n            for station in stations:\n                if station['rework'] / station['inspected'] > policy['max_station_rework_rate']:\n                    plant_api.increase_sampling(lot['lot_id'], station['station_id'], \"High rework rate\")\n                    break\n        else:\n            plant_api.release_lot(lot['lot_id'], \"No issues detected\")\n\n    plant_api.notify_quality(\"Lot action completed\")\ndecide_lot_action()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "quality_sampling",
+          "scenario": "release",
+          "expected": {
+            "action": "released",
+            "target": "LOT-70"
+          },
+          "actual": {
+            "action": "released",
+            "target": "LOT-70"
+          },
+          "call_names": [
+            "get_inspection_policy",
+            "get_active_lot",
+            "get_station_quality",
+            "get_station_quality",
+            "release_lot",
+            "notify_quality"
+          ],
+          "expected_calls": [
+            "get_inspection_policy",
+            "get_active_lot",
+            "get_station_quality",
+            "get_station_quality",
+            "release_lot",
+            "notify_quality"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "promotion": {
+        "release": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "quality_sampling",
+            "scenario": "release",
+            "expected": {
+              "action": "released",
+              "target": "LOT-70"
+            },
+            "actual": {
+              "action": "released",
+              "target": "LOT-70"
+            },
+            "call_names": [
+              "get_inspection_policy",
+              "get_active_lot",
+              "get_station_quality",
+              "get_station_quality",
+              "release_lot",
+              "notify_quality"
+            ],
+            "expected_calls": [
+              "get_inspection_policy",
+              "get_active_lot",
+              "get_station_quality",
+              "get_station_quality",
+              "release_lot",
+              "notify_quality"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        },
+        "sampling": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "quality_sampling",
+            "scenario": "sampling",
+            "expected": {
+              "action": "sampling",
+              "target": "S-2"
+            },
+            "actual": {
+              "action": "sampling",
+              "target": "S-2"
+            },
+            "call_names": [
+              "get_inspection_policy",
+              "get_active_lot",
+              "get_station_quality",
+              "get_station_quality",
+              "increase_sampling",
+              "notify_quality"
+            ],
+            "expected_calls": [
+              "get_inspection_policy",
+              "get_active_lot",
+              "get_station_quality",
+              "get_station_quality",
+              "increase_sampling",
+              "notify_quality"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        },
+        "quarantine": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "quality_sampling",
+            "scenario": "quarantine",
+            "expected": {
+              "action": "quarantined",
+              "target": "LOT-70"
+            },
+            "actual": {
+              "action": "quarantined",
+              "target": "LOT-70"
+            },
+            "call_names": [
+              "get_inspection_policy",
+              "get_active_lot",
+              "get_station_quality",
+              "get_station_quality",
+              "quarantine_lot",
+              "notify_quality"
+            ],
+            "expected_calls": [
+              "get_inspection_policy",
+              "get_active_lot",
+              "get_station_quality",
+              "get_station_quality",
+              "quarantine_lot",
+              "notify_quality"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "elapsed_s": 72.554,
+          "raw_text": "```python\nimport plant_api\n\ndef decide_lot_action():\n    policy = plant_api.get_inspection_policy()\n    lot = plant_api.get_active_lot()\n    total_defects = 0\n    total_inspected = 0\n    rework_rates = []\n\n    for station_id in lot['station_ids']:\n        station = plant_api.get_station_quality(station_id)\n        total_defects += station['defects']\n        total_inspected += station['inspected']\n        rework_rates.append(station['rework'] / station['inspected'])\n\n    total_defect_rate = total_defects / total_inspected if total_inspected > 0 else 0\n    max_rework_rate = max(rework_rates) if rework_rates else 0\n\n    if total_defect_rate > policy['max_total_defect_rate']:\n        plant_api.quarantine_lot(lot['lot_id'], \"High defect rate\")\n    elif max_rework_rate > policy['max_station_rework_rate']:\n        for station_id in lot['station_ids']:\n            station = plant_api.get_station_quality(station_id)\n            if station['rework'] / station['inspected'] > policy['max_station_rework_rate']:\n                plant_api.increase_sampling(lot['lot_id'], station_id, \"High rework rate\")\n                break\n    else:\n        plant_api.release_lot(lot['lot_id'], \"No issues detected\")\n\n    plant_api.notify_quality(\"Lot action completed\")\n\ndecide_lot_action()\n```",
+          "code": "import plant_api\n\ndef decide_lot_action():\n    policy = plant_api.get_inspection_policy()\n    lot = plant_api.get_active_lot()\n    total_defects = 0\n    total_inspected = 0\n    rework_rates = []\n\n    for station_id in lot['station_ids']:\n        station = plant_api.get_station_quality(station_id)\n        total_defects += station['defects']\n        total_inspected += station['inspected']\n        rework_rates.append(station['rework'] / station['inspected'])\n\n    total_defect_rate = total_defects / total_inspected if total_inspected > 0 else 0\n    max_rework_rate = max(rework_rates) if rework_rates else 0\n\n    if total_defect_rate > policy['max_total_defect_rate']:\n        plant_api.quarantine_lot(lot['lot_id'], \"High defect rate\")\n    elif max_rework_rate > policy['max_station_rework_rate']:\n        for station_id in lot['station_ids']:\n            station = plant_api.get_station_quality(station_id)\n            if station['rework'] / station['inspected'] > policy['max_station_rework_rate']:\n                plant_api.increase_sampling(lot['lot_id'], station_id, \"High rework rate\")\n                break\n    else:\n        plant_api.release_lot(lot['lot_id'], \"No issues detected\")\n\n    plant_api.notify_quality(\"Lot action completed\")\n\ndecide_lot_action()",
+          "promotion_passed": false,
+          "validations": {
+            "release": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "quality_sampling",
+                "scenario": "release",
+                "expected": {
+                  "action": "released",
+                  "target": "LOT-70"
+                },
+                "actual": {
+                  "action": "released",
+                  "target": "LOT-70"
+                },
+                "call_names": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "release_lot",
+                  "notify_quality"
+                ],
+                "expected_calls": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "release_lot",
+                  "notify_quality"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "sampling": {
+              "passed": false,
+              "failure": "wrong_state_or_trace",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": false,
+                "task": "quality_sampling",
+                "scenario": "sampling",
+                "expected": {
+                  "action": "sampling",
+                  "target": "S-2"
+                },
+                "actual": {
+                  "action": "sampling",
+                  "target": "S-2"
+                },
+                "call_names": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "increase_sampling",
+                  "notify_quality"
+                ],
+                "expected_calls": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "increase_sampling",
+                  "notify_quality"
+                ],
+                "trace_correct": false,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "quarantine": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "quality_sampling",
+                "scenario": "quarantine",
+                "expected": {
+                  "action": "quarantined",
+                  "target": "LOT-70"
+                },
+                "actual": {
+                  "action": "quarantined",
+                  "target": "LOT-70"
+                },
+                "call_names": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "quarantine_lot",
+                  "notify_quality"
+                ],
+                "expected_calls": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "quarantine_lot",
+                  "notify_quality"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            }
+          }
+        },
+        {
+          "attempt": 2,
+          "elapsed_s": 76.739,
+          "raw_text": "```python\nimport plant_api\n\ndef decide_lot_action():\n    policy = plant_api.get_inspection_policy()\n    lot = plant_api.get_active_lot()\n    total_inspected = sum(station['inspected'] for station in (plant_api.get_station_quality(st) for st in lot['station_ids']))\n    total_defects = sum(station['defects'] for station in (plant_api.get_station_quality(st) for st in lot['station_ids']))\n    total_defect_rate = total_defects / total_inspected if total_inspected > 0 else 0\n\n    if total_defect_rate > policy['max_total_defect_rate']:\n        plant_api.quarantine_lot(lot['lot_id'], \"High defect rate\")\n    else:\n        max_rework = max(station['rework'] / station['inspected'] for station in (plant_api.get_station_quality(st) for st in lot['station_ids']))\n        if max_rework > policy['max_station_rework_rate']:\n            for station_id in lot['station_ids']:\n                station = plant_api.get_station_quality(station_id)\n                if station['rework'] / station['inspected'] > policy['max_station_rework_rate']:\n                    plant_api.increase_sampling(lot['lot_id'], station_id, \"High rework rate\")\n                    break\n        else:\n            plant_api.release_lot(lot['lot_id'], \"No issues detected\")\n\n    plant_api.notify_quality(\"Lot action completed\")\ndecide_lot_action()\n```",
+          "code": "import plant_api\n\ndef decide_lot_action():\n    policy = plant_api.get_inspection_policy()\n    lot = plant_api.get_active_lot()\n    total_inspected = sum(station['inspected'] for station in (plant_api.get_station_quality(st) for st in lot['station_ids']))\n    total_defects = sum(station['defects'] for station in (plant_api.get_station_quality(st) for st in lot['station_ids']))\n    total_defect_rate = total_defects / total_inspected if total_inspected > 0 else 0\n\n    if total_defect_rate > policy['max_total_defect_rate']:\n        plant_api.quarantine_lot(lot['lot_id'], \"High defect rate\")\n    else:\n        max_rework = max(station['rework'] / station['inspected'] for station in (plant_api.get_station_quality(st) for st in lot['station_ids']))\n        if max_rework > policy['max_station_rework_rate']:\n            for station_id in lot['station_ids']:\n                station = plant_api.get_station_quality(station_id)\n                if station['rework'] / station['inspected'] > policy['max_station_rework_rate']:\n                    plant_api.increase_sampling(lot['lot_id'], station_id, \"High rework rate\")\n                    break\n        else:\n            plant_api.release_lot(lot['lot_id'], \"No issues detected\")\n\n    plant_api.notify_quality(\"Lot action completed\")\ndecide_lot_action()",
+          "promotion_passed": false,
+          "validations": {
+            "release": {
+              "passed": false,
+              "failure": "wrong_state_or_trace",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": false,
+                "task": "quality_sampling",
+                "scenario": "release",
+                "expected": {
+                  "action": "released",
+                  "target": "LOT-70"
+                },
+                "actual": {
+                  "action": "released",
+                  "target": "LOT-70"
+                },
+                "call_names": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "release_lot",
+                  "notify_quality"
+                ],
+                "expected_calls": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "release_lot",
+                  "notify_quality"
+                ],
+                "trace_correct": false,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "sampling": {
+              "passed": false,
+              "failure": "wrong_state_or_trace",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": false,
+                "task": "quality_sampling",
+                "scenario": "sampling",
+                "expected": {
+                  "action": "sampling",
+                  "target": "S-2"
+                },
+                "actual": {
+                  "action": "sampling",
+                  "target": "S-2"
+                },
+                "call_names": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "increase_sampling",
+                  "notify_quality"
+                ],
+                "expected_calls": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "increase_sampling",
+                  "notify_quality"
+                ],
+                "trace_correct": false,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "quarantine": {
+              "passed": false,
+              "failure": "wrong_state_or_trace",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": false,
+                "task": "quality_sampling",
+                "scenario": "quarantine",
+                "expected": {
+                  "action": "quarantined",
+                  "target": "LOT-70"
+                },
+                "actual": {
+                  "action": "quarantined",
+                  "target": "LOT-70"
+                },
+                "call_names": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "quarantine_lot",
+                  "notify_quality"
+                ],
+                "expected_calls": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "quarantine_lot",
+                  "notify_quality"
+                ],
+                "trace_correct": false,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            }
+          }
+        },
+        {
+          "attempt": 3,
+          "elapsed_s": 69.553,
+          "raw_text": "```python\nimport plant_api\n\ndef decide_lot_action():\n    policy = plant_api.get_inspection_policy()\n    lot = plant_api.get_active_lot()\n    stations = [plant_api.get_station_quality(st) for st in lot['station_ids']]\n\n    total_inspected = sum(station['inspected'] for station in stations)\n    total_defects = sum(station['defects'] for station in stations)\n    total_defect_rate = total_defects / total_inspected if total_inspected > 0 else 0\n\n    if total_defect_rate > policy['max_total_defect_rate']:\n        plant_api.quarantine_lot(lot['lot_id'], \"High defect rate\")\n    else:\n        max_rework = max(station['rework'] / station['inspected'] for station in stations if station['inspected'] > 0)\n        if max_rework > policy['max_station_rework_rate']:\n            for station in stations:\n                if station['rework'] / station['inspected'] > policy['max_station_rework_rate']:\n                    plant_api.increase_sampling(lot['lot_id'], station['station_id'], \"High rework rate\")\n                    break\n        else:\n            plant_api.release_lot(lot['lot_id'], \"No issues detected\")\n\n    plant_api.notify_quality(\"Lot action completed\")\ndecide_lot_action()\n```",
+          "code": "import plant_api\n\ndef decide_lot_action():\n    policy = plant_api.get_inspection_policy()\n    lot = plant_api.get_active_lot()\n    stations = [plant_api.get_station_quality(st) for st in lot['station_ids']]\n\n    total_inspected = sum(station['inspected'] for station in stations)\n    total_defects = sum(station['defects'] for station in stations)\n    total_defect_rate = total_defects / total_inspected if total_inspected > 0 else 0\n\n    if total_defect_rate > policy['max_total_defect_rate']:\n        plant_api.quarantine_lot(lot['lot_id'], \"High defect rate\")\n    else:\n        max_rework = max(station['rework'] / station['inspected'] for station in stations if station['inspected'] > 0)\n        if max_rework > policy['max_station_rework_rate']:\n            for station in stations:\n                if station['rework'] / station['inspected'] > policy['max_station_rework_rate']:\n                    plant_api.increase_sampling(lot['lot_id'], station['station_id'], \"High rework rate\")\n                    break\n        else:\n            plant_api.release_lot(lot['lot_id'], \"No issues detected\")\n\n    plant_api.notify_quality(\"Lot action completed\")\ndecide_lot_action()",
+          "promotion_passed": true,
+          "validations": {
+            "release": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "quality_sampling",
+                "scenario": "release",
+                "expected": {
+                  "action": "released",
+                  "target": "LOT-70"
+                },
+                "actual": {
+                  "action": "released",
+                  "target": "LOT-70"
+                },
+                "call_names": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "release_lot",
+                  "notify_quality"
+                ],
+                "expected_calls": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "release_lot",
+                  "notify_quality"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "sampling": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "quality_sampling",
+                "scenario": "sampling",
+                "expected": {
+                  "action": "sampling",
+                  "target": "S-2"
+                },
+                "actual": {
+                  "action": "sampling",
+                  "target": "S-2"
+                },
+                "call_names": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "increase_sampling",
+                  "notify_quality"
+                ],
+                "expected_calls": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "increase_sampling",
+                  "notify_quality"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "quarantine": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "quality_sampling",
+                "scenario": "quarantine",
+                "expected": {
+                  "action": "quarantined",
+                  "target": "LOT-70"
+                },
+                "actual": {
+                  "action": "quarantined",
+                  "target": "LOT-70"
+                },
+                "call_names": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "quarantine_lot",
+                  "notify_quality"
+                ],
+                "expected_calls": [
+                  "get_inspection_policy",
+                  "get_active_lot",
+                  "get_station_quality",
+                  "get_station_quality",
+                  "quarantine_lot",
+                  "notify_quality"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "task": "quality_sampling",
+      "scenario": "sampling",
+      "passed": true,
+      "cache_hit": true,
+      "model_called": false,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/quality_sampling__quality-v1.json",
+        "status": "contract_match",
+        "contract_hash": "358ecf6f2ff10f7f45427c3731870c138a013a4d311c5f1729642e76f22a4175",
+        "fresh_validation": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "quality_sampling",
+            "scenario": "sampling",
+            "expected": {
+              "action": "sampling",
+              "target": "S-2"
+            },
+            "actual": {
+              "action": "sampling",
+              "target": "S-2"
+            },
+            "call_names": [
+              "get_inspection_policy",
+              "get_active_lot",
+              "get_station_quality",
+              "get_station_quality",
+              "increase_sampling",
+              "notify_quality"
+            ],
+            "expected_calls": [
+              "get_inspection_policy",
+              "get_active_lot",
+              "get_station_quality",
+              "get_station_quality",
+              "increase_sampling",
+              "notify_quality"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "code": "import plant_api\n\ndef decide_lot_action():\n    policy = plant_api.get_inspection_policy()\n    lot = plant_api.get_active_lot()\n    stations = [plant_api.get_station_quality(st) for st in lot['station_ids']]\n\n    total_inspected = sum(station['inspected'] for station in stations)\n    total_defects = sum(station['defects'] for station in stations)\n    total_defect_rate = total_defects / total_inspected if total_inspected > 0 else 0\n\n    if total_defect_rate > policy['max_total_defect_rate']:\n        plant_api.quarantine_lot(lot['lot_id'], \"High defect rate\")\n    else:\n        max_rework = max(station['rework'] / station['inspected'] for station in stations if station['inspected'] > 0)\n        if max_rework > policy['max_station_rework_rate']:\n            for station in stations:\n                if station['rework'] / station['inspected'] > policy['max_station_rework_rate']:\n                    plant_api.increase_sampling(lot['lot_id'], station['station_id'], \"High rework rate\")\n                    break\n        else:\n            plant_api.release_lot(lot['lot_id'], \"No issues detected\")\n\n    plant_api.notify_quality(\"Lot action completed\")\ndecide_lot_action()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "quality_sampling",
+          "scenario": "sampling",
+          "expected": {
+            "action": "sampling",
+            "target": "S-2"
+          },
+          "actual": {
+            "action": "sampling",
+            "target": "S-2"
+          },
+          "call_names": [
+            "get_inspection_policy",
+            "get_active_lot",
+            "get_station_quality",
+            "get_station_quality",
+            "increase_sampling",
+            "notify_quality"
+          ],
+          "expected_calls": [
+            "get_inspection_policy",
+            "get_active_lot",
+            "get_station_quality",
+            "get_station_quality",
+            "increase_sampling",
+            "notify_quality"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "attempts": []
+    },
+    {
+      "task": "quality_sampling",
+      "scenario": "quarantine",
+      "passed": true,
+      "cache_hit": true,
+      "model_called": false,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/quality_sampling__quality-v1.json",
+        "status": "contract_match",
+        "contract_hash": "358ecf6f2ff10f7f45427c3731870c138a013a4d311c5f1729642e76f22a4175",
+        "fresh_validation": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "quality_sampling",
+            "scenario": "quarantine",
+            "expected": {
+              "action": "quarantined",
+              "target": "LOT-70"
+            },
+            "actual": {
+              "action": "quarantined",
+              "target": "LOT-70"
+            },
+            "call_names": [
+              "get_inspection_policy",
+              "get_active_lot",
+              "get_station_quality",
+              "get_station_quality",
+              "quarantine_lot",
+              "notify_quality"
+            ],
+            "expected_calls": [
+              "get_inspection_policy",
+              "get_active_lot",
+              "get_station_quality",
+              "get_station_quality",
+              "quarantine_lot",
+              "notify_quality"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "code": "import plant_api\n\ndef decide_lot_action():\n    policy = plant_api.get_inspection_policy()\n    lot = plant_api.get_active_lot()\n    stations = [plant_api.get_station_quality(st) for st in lot['station_ids']]\n\n    total_inspected = sum(station['inspected'] for station in stations)\n    total_defects = sum(station['defects'] for station in stations)\n    total_defect_rate = total_defects / total_inspected if total_inspected > 0 else 0\n\n    if total_defect_rate > policy['max_total_defect_rate']:\n        plant_api.quarantine_lot(lot['lot_id'], \"High defect rate\")\n    else:\n        max_rework = max(station['rework'] / station['inspected'] for station in stations if station['inspected'] > 0)\n        if max_rework > policy['max_station_rework_rate']:\n            for station in stations:\n                if station['rework'] / station['inspected'] > policy['max_station_rework_rate']:\n                    plant_api.increase_sampling(lot['lot_id'], station['station_id'], \"High rework rate\")\n                    break\n        else:\n            plant_api.release_lot(lot['lot_id'], \"No issues detected\")\n\n    plant_api.notify_quality(\"Lot action completed\")\ndecide_lot_action()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "quality_sampling",
+          "scenario": "quarantine",
+          "expected": {
+            "action": "quarantined",
+            "target": "LOT-70"
+          },
+          "actual": {
+            "action": "quarantined",
+            "target": "LOT-70"
+          },
+          "call_names": [
+            "get_inspection_policy",
+            "get_active_lot",
+            "get_station_quality",
+            "get_station_quality",
+            "quarantine_lot",
+            "notify_quality"
+          ],
+          "expected_calls": [
+            "get_inspection_policy",
+            "get_active_lot",
+            "get_station_quality",
+            "get_station_quality",
+            "quarantine_lot",
+            "notify_quality"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "attempts": []
+    },
+    {
+      "task": "energy_window",
+      "scenario": "first_window",
+      "passed": true,
+      "cache_hit": false,
+      "model_called": true,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/energy_window__energy-v2.json",
+        "status": "not_found",
+        "contract_hash": "d85af51555c1a82a91fe7c00f48fe38dd045ead0027be3dcacf607373ea2954b"
+      },
+      "code": "import plant_api\n\ndef schedule_energy_job():\n    policy = plant_api.get_energy_policy()\n    job = plant_api.get_pending_energy_job()\n    windows = plant_api.get_candidate_windows()\n\n    for window in windows['windows']:\n        if (window['price_per_kwh'] <= policy['max_price_per_kwh'] and\n            window['projected_load_kw'] <= policy['max_projected_load_kw'] and\n            window['start_slot'] + job['duration_slots'] <= job['deadline_slot']):\n            plant_api.schedule_energy_job(job['job_id'], window['window_id'])\n            plant_api.notify_energy_desk(f\"Scheduled job {job['job_id']} in window {window['window_id']}\")\n            return\n\n    plant_api.defer_energy_job(job['job_id'], \"No feasible window found\")\n    plant_api.notify_energy_desk(f\"Deferred job {job['job_id']} due to no feasible window\")\n\nschedule_energy_job()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "energy_window",
+          "scenario": "first_window",
+          "expected": {
+            "action": "scheduled",
+            "target": "W-1"
+          },
+          "actual": {
+            "action": "scheduled",
+            "target": "W-1"
+          },
+          "call_names": [
+            "get_energy_policy",
+            "get_pending_energy_job",
+            "get_candidate_windows",
+            "schedule_energy_job",
+            "notify_energy_desk"
+          ],
+          "expected_calls": [
+            "get_energy_policy",
+            "get_pending_energy_job",
+            "get_candidate_windows",
+            "schedule_energy_job",
+            "notify_energy_desk"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "promotion": {
+        "first_window": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "energy_window",
+            "scenario": "first_window",
+            "expected": {
+              "action": "scheduled",
+              "target": "W-1"
+            },
+            "actual": {
+              "action": "scheduled",
+              "target": "W-1"
+            },
+            "call_names": [
+              "get_energy_policy",
+              "get_pending_energy_job",
+              "get_candidate_windows",
+              "schedule_energy_job",
+              "notify_energy_desk"
+            ],
+            "expected_calls": [
+              "get_energy_policy",
+              "get_pending_energy_job",
+              "get_candidate_windows",
+              "schedule_energy_job",
+              "notify_energy_desk"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        },
+        "skip_window": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "energy_window",
+            "scenario": "skip_window",
+            "expected": {
+              "action": "scheduled",
+              "target": "W-2"
+            },
+            "actual": {
+              "action": "scheduled",
+              "target": "W-2"
+            },
+            "call_names": [
+              "get_energy_policy",
+              "get_pending_energy_job",
+              "get_candidate_windows",
+              "schedule_energy_job",
+              "notify_energy_desk"
+            ],
+            "expected_calls": [
+              "get_energy_policy",
+              "get_pending_energy_job",
+              "get_candidate_windows",
+              "schedule_energy_job",
+              "notify_energy_desk"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        },
+        "defer": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "energy_window",
+            "scenario": "defer",
+            "expected": {
+              "action": "deferred",
+              "target": "JOB-8"
+            },
+            "actual": {
+              "action": "deferred",
+              "target": "JOB-8"
+            },
+            "call_names": [
+              "get_energy_policy",
+              "get_pending_energy_job",
+              "get_candidate_windows",
+              "defer_energy_job",
+              "notify_energy_desk"
+            ],
+            "expected_calls": [
+              "get_energy_policy",
+              "get_pending_energy_job",
+              "get_candidate_windows",
+              "defer_energy_job",
+              "notify_energy_desk"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "elapsed_s": 49.086,
+          "raw_text": "```python\nimport plant_api\n\ndef schedule_energy_job():\n    policy = plant_api.get_energy_policy()\n    job = plant_api.get_pending_energy_job()\n    windows = plant_api.get_candidate_windows()\n\n    for window in windows['windows']:\n        if (window['price_per_kwh'] <= policy['max_price_per_kwh'] and\n            window['projected_load_kw'] <= policy['max_projected_load_kw'] and\n            window['start_slot'] + job['duration_slots'] <= job['deadline_slot']):\n            plant_api.schedule_energy_job(job['job_id'], window['window_id'])\n            plant_api.notify_energy_desk(f\"Scheduled job {job['job_id']} in window {window['window_id']}\")\n            return\n\n    plant_api.defer_energy_job(job['job_id'], \"No feasible window found\")\n    plant_api.notify_energy_desk(f\"Deferred job {job['job_id']} due to no feasible window\")\n\nschedule_energy_job()\n```",
+          "code": "import plant_api\n\ndef schedule_energy_job():\n    policy = plant_api.get_energy_policy()\n    job = plant_api.get_pending_energy_job()\n    windows = plant_api.get_candidate_windows()\n\n    for window in windows['windows']:\n        if (window['price_per_kwh'] <= policy['max_price_per_kwh'] and\n            window['projected_load_kw'] <= policy['max_projected_load_kw'] and\n            window['start_slot'] + job['duration_slots'] <= job['deadline_slot']):\n            plant_api.schedule_energy_job(job['job_id'], window['window_id'])\n            plant_api.notify_energy_desk(f\"Scheduled job {job['job_id']} in window {window['window_id']}\")\n            return\n\n    plant_api.defer_energy_job(job['job_id'], \"No feasible window found\")\n    plant_api.notify_energy_desk(f\"Deferred job {job['job_id']} due to no feasible window\")\n\nschedule_energy_job()",
+          "promotion_passed": true,
+          "validations": {
+            "first_window": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "energy_window",
+                "scenario": "first_window",
+                "expected": {
+                  "action": "scheduled",
+                  "target": "W-1"
+                },
+                "actual": {
+                  "action": "scheduled",
+                  "target": "W-1"
+                },
+                "call_names": [
+                  "get_energy_policy",
+                  "get_pending_energy_job",
+                  "get_candidate_windows",
+                  "schedule_energy_job",
+                  "notify_energy_desk"
+                ],
+                "expected_calls": [
+                  "get_energy_policy",
+                  "get_pending_energy_job",
+                  "get_candidate_windows",
+                  "schedule_energy_job",
+                  "notify_energy_desk"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "skip_window": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "energy_window",
+                "scenario": "skip_window",
+                "expected": {
+                  "action": "scheduled",
+                  "target": "W-2"
+                },
+                "actual": {
+                  "action": "scheduled",
+                  "target": "W-2"
+                },
+                "call_names": [
+                  "get_energy_policy",
+                  "get_pending_energy_job",
+                  "get_candidate_windows",
+                  "schedule_energy_job",
+                  "notify_energy_desk"
+                ],
+                "expected_calls": [
+                  "get_energy_policy",
+                  "get_pending_energy_job",
+                  "get_candidate_windows",
+                  "schedule_energy_job",
+                  "notify_energy_desk"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "defer": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "energy_window",
+                "scenario": "defer",
+                "expected": {
+                  "action": "deferred",
+                  "target": "JOB-8"
+                },
+                "actual": {
+                  "action": "deferred",
+                  "target": "JOB-8"
+                },
+                "call_names": [
+                  "get_energy_policy",
+                  "get_pending_energy_job",
+                  "get_candidate_windows",
+                  "defer_energy_job",
+                  "notify_energy_desk"
+                ],
+                "expected_calls": [
+                  "get_energy_policy",
+                  "get_pending_energy_job",
+                  "get_candidate_windows",
+                  "defer_energy_job",
+                  "notify_energy_desk"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "task": "energy_window",
+      "scenario": "skip_window",
+      "passed": true,
+      "cache_hit": true,
+      "model_called": false,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/energy_window__energy-v2.json",
+        "status": "contract_match",
+        "contract_hash": "d85af51555c1a82a91fe7c00f48fe38dd045ead0027be3dcacf607373ea2954b",
+        "fresh_validation": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "energy_window",
+            "scenario": "skip_window",
+            "expected": {
+              "action": "scheduled",
+              "target": "W-2"
+            },
+            "actual": {
+              "action": "scheduled",
+              "target": "W-2"
+            },
+            "call_names": [
+              "get_energy_policy",
+              "get_pending_energy_job",
+              "get_candidate_windows",
+              "schedule_energy_job",
+              "notify_energy_desk"
+            ],
+            "expected_calls": [
+              "get_energy_policy",
+              "get_pending_energy_job",
+              "get_candidate_windows",
+              "schedule_energy_job",
+              "notify_energy_desk"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "code": "import plant_api\n\ndef schedule_energy_job():\n    policy = plant_api.get_energy_policy()\n    job = plant_api.get_pending_energy_job()\n    windows = plant_api.get_candidate_windows()\n\n    for window in windows['windows']:\n        if (window['price_per_kwh'] <= policy['max_price_per_kwh'] and\n            window['projected_load_kw'] <= policy['max_projected_load_kw'] and\n            window['start_slot'] + job['duration_slots'] <= job['deadline_slot']):\n            plant_api.schedule_energy_job(job['job_id'], window['window_id'])\n            plant_api.notify_energy_desk(f\"Scheduled job {job['job_id']} in window {window['window_id']}\")\n            return\n\n    plant_api.defer_energy_job(job['job_id'], \"No feasible window found\")\n    plant_api.notify_energy_desk(f\"Deferred job {job['job_id']} due to no feasible window\")\n\nschedule_energy_job()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "energy_window",
+          "scenario": "skip_window",
+          "expected": {
+            "action": "scheduled",
+            "target": "W-2"
+          },
+          "actual": {
+            "action": "scheduled",
+            "target": "W-2"
+          },
+          "call_names": [
+            "get_energy_policy",
+            "get_pending_energy_job",
+            "get_candidate_windows",
+            "schedule_energy_job",
+            "notify_energy_desk"
+          ],
+          "expected_calls": [
+            "get_energy_policy",
+            "get_pending_energy_job",
+            "get_candidate_windows",
+            "schedule_energy_job",
+            "notify_energy_desk"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "attempts": []
+    },
+    {
+      "task": "energy_window",
+      "scenario": "defer",
+      "passed": true,
+      "cache_hit": true,
+      "model_called": false,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/energy_window__energy-v2.json",
+        "status": "contract_match",
+        "contract_hash": "d85af51555c1a82a91fe7c00f48fe38dd045ead0027be3dcacf607373ea2954b",
+        "fresh_validation": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "energy_window",
+            "scenario": "defer",
+            "expected": {
+              "action": "deferred",
+              "target": "JOB-8"
+            },
+            "actual": {
+              "action": "deferred",
+              "target": "JOB-8"
+            },
+            "call_names": [
+              "get_energy_policy",
+              "get_pending_energy_job",
+              "get_candidate_windows",
+              "defer_energy_job",
+              "notify_energy_desk"
+            ],
+            "expected_calls": [
+              "get_energy_policy",
+              "get_pending_energy_job",
+              "get_candidate_windows",
+              "defer_energy_job",
+              "notify_energy_desk"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "code": "import plant_api\n\ndef schedule_energy_job():\n    policy = plant_api.get_energy_policy()\n    job = plant_api.get_pending_energy_job()\n    windows = plant_api.get_candidate_windows()\n\n    for window in windows['windows']:\n        if (window['price_per_kwh'] <= policy['max_price_per_kwh'] and\n            window['projected_load_kw'] <= policy['max_projected_load_kw'] and\n            window['start_slot'] + job['duration_slots'] <= job['deadline_slot']):\n            plant_api.schedule_energy_job(job['job_id'], window['window_id'])\n            plant_api.notify_energy_desk(f\"Scheduled job {job['job_id']} in window {window['window_id']}\")\n            return\n\n    plant_api.defer_energy_job(job['job_id'], \"No feasible window found\")\n    plant_api.notify_energy_desk(f\"Deferred job {job['job_id']} due to no feasible window\")\n\nschedule_energy_job()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "energy_window",
+          "scenario": "defer",
+          "expected": {
+            "action": "deferred",
+            "target": "JOB-8"
+          },
+          "actual": {
+            "action": "deferred",
+            "target": "JOB-8"
+          },
+          "call_names": [
+            "get_energy_policy",
+            "get_pending_energy_job",
+            "get_candidate_windows",
+            "defer_energy_job",
+            "notify_energy_desk"
+          ],
+          "expected_calls": [
+            "get_energy_policy",
+            "get_pending_energy_job",
+            "get_candidate_windows",
+            "defer_energy_job",
+            "notify_energy_desk"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "attempts": []
+    },
+    {
+      "task": "spares_replenishment",
+      "scenario": "sufficient",
+      "passed": true,
+      "cache_hit": false,
+      "model_called": true,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/spares_replenishment__inventory-v1.json",
+        "status": "not_found",
+        "contract_hash": "fe75c13ed20cb3d8ad3361ddb32c860cdde5936dc5755c24b45e30f44f45f457"
+      },
+      "code": "import plant_api\n\ndef run_spare_parts_pipeline():\n    part_data = plant_api.get_required_part()\n    suppliers = plant_api.get_supplier_options()\n\n    shortage = max(part_data[\"required_quantity\"] - part_data[\"on_hand\"], 0)\n    if shortage == 0:\n        plant_api.record_inventory_ok(part_data[\"part_id\"], \"sufficient stock\")\n        plant_api.notify_inventory(\"Inventory is sufficient.\")\n    else:\n        feasible_supplier = next(\n            (supplier for supplier in suppliers[\"suppliers\"]\n             if supplier[\"available_quantity\"] >= shortage and supplier[\"lead_days\"] <= part_data[\"needed_in_days\"]),\n            None\n        )\n        if feasible_supplier:\n            plant_api.create_purchase_order(\n                part_data[\"part_id\"], feasible_supplier[\"supplier_id\"], shortage\n            )\n            plant_api.notify_inventory(f\"Ordered {shortage} units from {feasible_supplier['supplier_id']}.\")\n        else:\n            plant_api.escalate_shortage(part_data[\"part_id\"], \"no feasible supplier found\")\n            plant_api.notify_inventory(\"Shortage escalated due to no feasible supplier.\")\n\nrun_spare_parts_pipeline()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "spares_replenishment",
+          "scenario": "sufficient",
+          "expected": {
+            "action": "inventory_ok",
+            "target": "BEARING-42",
+            "quantity": 0
+          },
+          "actual": {
+            "action": "inventory_ok",
+            "target": "BEARING-42",
+            "quantity": 0
+          },
+          "call_names": [
+            "get_required_part",
+            "get_supplier_options",
+            "record_inventory_ok",
+            "notify_inventory"
+          ],
+          "expected_calls": [
+            "get_required_part",
+            "get_supplier_options",
+            "record_inventory_ok",
+            "notify_inventory"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "promotion": {
+        "sufficient": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "spares_replenishment",
+            "scenario": "sufficient",
+            "expected": {
+              "action": "inventory_ok",
+              "target": "BEARING-42",
+              "quantity": 0
+            },
+            "actual": {
+              "action": "inventory_ok",
+              "target": "BEARING-42",
+              "quantity": 0
+            },
+            "call_names": [
+              "get_required_part",
+              "get_supplier_options",
+              "record_inventory_ok",
+              "notify_inventory"
+            ],
+            "expected_calls": [
+              "get_required_part",
+              "get_supplier_options",
+              "record_inventory_ok",
+              "notify_inventory"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        },
+        "order": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "spares_replenishment",
+            "scenario": "order",
+            "expected": {
+              "action": "ordered",
+              "target": "SUP-A",
+              "quantity": 7
+            },
+            "actual": {
+              "action": "ordered",
+              "target": "SUP-A",
+              "quantity": 7
+            },
+            "call_names": [
+              "get_required_part",
+              "get_supplier_options",
+              "create_purchase_order",
+              "notify_inventory"
+            ],
+            "expected_calls": [
+              "get_required_part",
+              "get_supplier_options",
+              "create_purchase_order",
+              "notify_inventory"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        },
+        "escalate": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "spares_replenishment",
+            "scenario": "escalate",
+            "expected": {
+              "action": "escalated",
+              "target": "BEARING-42",
+              "quantity": 8
+            },
+            "actual": {
+              "action": "escalated",
+              "target": "BEARING-42",
+              "quantity": 8
+            },
+            "call_names": [
+              "get_required_part",
+              "get_supplier_options",
+              "escalate_shortage",
+              "notify_inventory"
+            ],
+            "expected_calls": [
+              "get_required_part",
+              "get_supplier_options",
+              "escalate_shortage",
+              "notify_inventory"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "attempts": [
+        {
+          "attempt": 1,
+          "elapsed_s": 57.639,
+          "raw_text": "```python\nimport plant_api\n\ndef run_spare_parts_pipeline():\n    part_data = plant_api.get_required_part()\n    suppliers = plant_api.get_supplier_options()\n\n    shortage = max(part_data[\"required_quantity\"] - part_data[\"on_hand\"], 0)\n    if shortage == 0:\n        plant_api.record_inventory_ok(part_data[\"part_id\"], \"sufficient stock\")\n        plant_api.notify_inventory(\"Inventory is sufficient.\")\n    else:\n        feasible_supplier = next(\n            (supplier for supplier in suppliers[\"suppliers\"]\n             if supplier[\"available_quantity\"] >= shortage and supplier[\"lead_days\"] <= part_data[\"needed_in_days\"]),\n            None\n        )\n        if feasible_supplier:\n            plant_api.create_purchase_order(\n                part_data[\"part_id\"], feasible_supplier[\"supplier_id\"], shortage\n            )\n            plant_api.notify_inventory(f\"Ordered {shortage} units from {feasible_supplier['supplier_id']}.\")\n        else:\n            plant_api.escalate_shortage(part_data[\"part_id\"], \"no feasible supplier found\")\n            plant_api.notify_inventory(\"Shortage escalated due to no feasible supplier.\")\n\nrun_spare_parts_pipeline()\n```",
+          "code": "import plant_api\n\ndef run_spare_parts_pipeline():\n    part_data = plant_api.get_required_part()\n    suppliers = plant_api.get_supplier_options()\n\n    shortage = max(part_data[\"required_quantity\"] - part_data[\"on_hand\"], 0)\n    if shortage == 0:\n        plant_api.record_inventory_ok(part_data[\"part_id\"], \"sufficient stock\")\n        plant_api.notify_inventory(\"Inventory is sufficient.\")\n    else:\n        feasible_supplier = next(\n            (supplier for supplier in suppliers[\"suppliers\"]\n             if supplier[\"available_quantity\"] >= shortage and supplier[\"lead_days\"] <= part_data[\"needed_in_days\"]),\n            None\n        )\n        if feasible_supplier:\n            plant_api.create_purchase_order(\n                part_data[\"part_id\"], feasible_supplier[\"supplier_id\"], shortage\n            )\n            plant_api.notify_inventory(f\"Ordered {shortage} units from {feasible_supplier['supplier_id']}.\")\n        else:\n            plant_api.escalate_shortage(part_data[\"part_id\"], \"no feasible supplier found\")\n            plant_api.notify_inventory(\"Shortage escalated due to no feasible supplier.\")\n\nrun_spare_parts_pipeline()",
+          "promotion_passed": true,
+          "validations": {
+            "sufficient": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "spares_replenishment",
+                "scenario": "sufficient",
+                "expected": {
+                  "action": "inventory_ok",
+                  "target": "BEARING-42",
+                  "quantity": 0
+                },
+                "actual": {
+                  "action": "inventory_ok",
+                  "target": "BEARING-42",
+                  "quantity": 0
+                },
+                "call_names": [
+                  "get_required_part",
+                  "get_supplier_options",
+                  "record_inventory_ok",
+                  "notify_inventory"
+                ],
+                "expected_calls": [
+                  "get_required_part",
+                  "get_supplier_options",
+                  "record_inventory_ok",
+                  "notify_inventory"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "order": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "spares_replenishment",
+                "scenario": "order",
+                "expected": {
+                  "action": "ordered",
+                  "target": "SUP-A",
+                  "quantity": 7
+                },
+                "actual": {
+                  "action": "ordered",
+                  "target": "SUP-A",
+                  "quantity": 7
+                },
+                "call_names": [
+                  "get_required_part",
+                  "get_supplier_options",
+                  "create_purchase_order",
+                  "notify_inventory"
+                ],
+                "expected_calls": [
+                  "get_required_part",
+                  "get_supplier_options",
+                  "create_purchase_order",
+                  "notify_inventory"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            },
+            "escalate": {
+              "passed": true,
+              "failure": "passed",
+              "source_errors": [],
+              "execution": {
+                "ok": true,
+                "returncode": 0,
+                "stdout": "",
+                "stderr": ""
+              },
+              "summary": {
+                "passed": true,
+                "task": "spares_replenishment",
+                "scenario": "escalate",
+                "expected": {
+                  "action": "escalated",
+                  "target": "BEARING-42",
+                  "quantity": 8
+                },
+                "actual": {
+                  "action": "escalated",
+                  "target": "BEARING-42",
+                  "quantity": 8
+                },
+                "call_names": [
+                  "get_required_part",
+                  "get_supplier_options",
+                  "escalate_shortage",
+                  "notify_inventory"
+                ],
+                "expected_calls": [
+                  "get_required_part",
+                  "get_supplier_options",
+                  "escalate_shortage",
+                  "notify_inventory"
+                ],
+                "trace_correct": true,
+                "state_correct": true,
+                "notified": true,
+                "tool_errors": []
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "task": "spares_replenishment",
+      "scenario": "order",
+      "passed": true,
+      "cache_hit": true,
+      "model_called": false,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/spares_replenishment__inventory-v1.json",
+        "status": "contract_match",
+        "contract_hash": "fe75c13ed20cb3d8ad3361ddb32c860cdde5936dc5755c24b45e30f44f45f457",
+        "fresh_validation": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "spares_replenishment",
+            "scenario": "order",
+            "expected": {
+              "action": "ordered",
+              "target": "SUP-A",
+              "quantity": 7
+            },
+            "actual": {
+              "action": "ordered",
+              "target": "SUP-A",
+              "quantity": 7
+            },
+            "call_names": [
+              "get_required_part",
+              "get_supplier_options",
+              "create_purchase_order",
+              "notify_inventory"
+            ],
+            "expected_calls": [
+              "get_required_part",
+              "get_supplier_options",
+              "create_purchase_order",
+              "notify_inventory"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "code": "import plant_api\n\ndef run_spare_parts_pipeline():\n    part_data = plant_api.get_required_part()\n    suppliers = plant_api.get_supplier_options()\n\n    shortage = max(part_data[\"required_quantity\"] - part_data[\"on_hand\"], 0)\n    if shortage == 0:\n        plant_api.record_inventory_ok(part_data[\"part_id\"], \"sufficient stock\")\n        plant_api.notify_inventory(\"Inventory is sufficient.\")\n    else:\n        feasible_supplier = next(\n            (supplier for supplier in suppliers[\"suppliers\"]\n             if supplier[\"available_quantity\"] >= shortage and supplier[\"lead_days\"] <= part_data[\"needed_in_days\"]),\n            None\n        )\n        if feasible_supplier:\n            plant_api.create_purchase_order(\n                part_data[\"part_id\"], feasible_supplier[\"supplier_id\"], shortage\n            )\n            plant_api.notify_inventory(f\"Ordered {shortage} units from {feasible_supplier['supplier_id']}.\")\n        else:\n            plant_api.escalate_shortage(part_data[\"part_id\"], \"no feasible supplier found\")\n            plant_api.notify_inventory(\"Shortage escalated due to no feasible supplier.\")\n\nrun_spare_parts_pipeline()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "spares_replenishment",
+          "scenario": "order",
+          "expected": {
+            "action": "ordered",
+            "target": "SUP-A",
+            "quantity": 7
+          },
+          "actual": {
+            "action": "ordered",
+            "target": "SUP-A",
+            "quantity": 7
+          },
+          "call_names": [
+            "get_required_part",
+            "get_supplier_options",
+            "create_purchase_order",
+            "notify_inventory"
+          ],
+          "expected_calls": [
+            "get_required_part",
+            "get_supplier_options",
+            "create_purchase_order",
+            "notify_inventory"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "attempts": []
+    },
+    {
+      "task": "spares_replenishment",
+      "scenario": "escalate",
+      "passed": true,
+      "cache_hit": true,
+      "model_called": false,
+      "cache_check": {
+        "path": "/home/ubuntu/manufacturing_codegen_results/cache/ministral3b_five_task_clean_final/spares_replenishment__inventory-v1.json",
+        "status": "contract_match",
+        "contract_hash": "fe75c13ed20cb3d8ad3361ddb32c860cdde5936dc5755c24b45e30f44f45f457",
+        "fresh_validation": {
+          "passed": true,
+          "failure": "passed",
+          "source_errors": [],
+          "execution": {
+            "ok": true,
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          "summary": {
+            "passed": true,
+            "task": "spares_replenishment",
+            "scenario": "escalate",
+            "expected": {
+              "action": "escalated",
+              "target": "BEARING-42",
+              "quantity": 8
+            },
+            "actual": {
+              "action": "escalated",
+              "target": "BEARING-42",
+              "quantity": 8
+            },
+            "call_names": [
+              "get_required_part",
+              "get_supplier_options",
+              "escalate_shortage",
+              "notify_inventory"
+            ],
+            "expected_calls": [
+              "get_required_part",
+              "get_supplier_options",
+              "escalate_shortage",
+              "notify_inventory"
+            ],
+            "trace_correct": true,
+            "state_correct": true,
+            "notified": true,
+            "tool_errors": []
+          }
+        }
+      },
+      "code": "import plant_api\n\ndef run_spare_parts_pipeline():\n    part_data = plant_api.get_required_part()\n    suppliers = plant_api.get_supplier_options()\n\n    shortage = max(part_data[\"required_quantity\"] - part_data[\"on_hand\"], 0)\n    if shortage == 0:\n        plant_api.record_inventory_ok(part_data[\"part_id\"], \"sufficient stock\")\n        plant_api.notify_inventory(\"Inventory is sufficient.\")\n    else:\n        feasible_supplier = next(\n            (supplier for supplier in suppliers[\"suppliers\"]\n             if supplier[\"available_quantity\"] >= shortage and supplier[\"lead_days\"] <= part_data[\"needed_in_days\"]),\n            None\n        )\n        if feasible_supplier:\n            plant_api.create_purchase_order(\n                part_data[\"part_id\"], feasible_supplier[\"supplier_id\"], shortage\n            )\n            plant_api.notify_inventory(f\"Ordered {shortage} units from {feasible_supplier['supplier_id']}.\")\n        else:\n            plant_api.escalate_shortage(part_data[\"part_id\"], \"no feasible supplier found\")\n            plant_api.notify_inventory(\"Shortage escalated due to no feasible supplier.\")\n\nrun_spare_parts_pipeline()",
+      "result": {
+        "passed": true,
+        "failure": "passed",
+        "source_errors": [],
+        "execution": {
+          "ok": true,
+          "returncode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "summary": {
+          "passed": true,
+          "task": "spares_replenishment",
+          "scenario": "escalate",
+          "expected": {
+            "action": "escalated",
+            "target": "BEARING-42",
+            "quantity": 8
+          },
+          "actual": {
+            "action": "escalated",
+            "target": "BEARING-42",
+            "quantity": 8
+          },
+          "call_names": [
+            "get_required_part",
+            "get_supplier_options",
+            "escalate_shortage",
+            "notify_inventory"
+          ],
+          "expected_calls": [
+            "get_required_part",
+            "get_supplier_options",
+            "escalate_shortage",
+            "notify_inventory"
+          ],
+          "trace_correct": true,
+          "state_correct": true,
+          "notified": true,
+          "tool_errors": []
+        }
+      },
+      "attempts": []
+    }
+  ]
+}

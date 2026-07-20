@@ -1,0 +1,137 @@
+{
+  "task": "maintenance_priority",
+  "contract_version": "maintenance-v1",
+  "contract_hash": "c23399698c847e90988c4edc71cac39560a4d409f6017f2a9da1bae7aa42537b",
+  "sandbox_version": "manufacturing-sandbox-v2",
+  "validator_version": "strict-mock-validator-v2",
+  "model": "ministral3-3b-q4",
+  "accepted_at": "2026-07-19T23:40:14.763959+00:00",
+  "promotion_scenarios": [
+    "monitor",
+    "planned",
+    "urgent"
+  ],
+  "promotion_results": {
+    "monitor": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "maintenance_priority",
+        "scenario": "monitor",
+        "expected": {
+          "action": "monitoring",
+          "target": null,
+          "priority": null
+        },
+        "actual": {
+          "action": "monitoring",
+          "target": null,
+          "priority": null
+        },
+        "call_names": [
+          "get_maintenance_policy",
+          "get_machine_queue",
+          "get_machine_health",
+          "get_machine_health",
+          "get_machine_health",
+          "record_monitoring",
+          "notify_maintenance"
+        ],
+        "expected_calls": [
+          "get_maintenance_policy",
+          "get_machine_queue",
+          "get_machine_health",
+          "get_machine_health",
+          "get_machine_health",
+          "record_monitoring",
+          "notify_maintenance"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    },
+    "planned": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "maintenance_priority",
+        "scenario": "planned",
+        "expected": {
+          "action": "maintenance",
+          "target": "M-30",
+          "priority": "planned"
+        },
+        "actual": {
+          "action": "maintenance",
+          "target": "M-30",
+          "priority": "planned"
+        },
+        "call_names": [
+          "get_maintenance_policy",
+          "get_machine_queue",
+          "get_machine_health",
+          "get_machine_health",
+          "get_machine_health",
+          "schedule_maintenance",
+          "notify_maintenance"
+        ],
+        "expected_calls": [
+          "get_maintenance_policy",
+          "get_machine_queue",
+          "get_machine_health",
+          "get_machine_health",
+          "get_machine_health",
+          "schedule_maintenance",
+          "notify_maintenance"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    },
+    "urgent": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "maintenance_priority",
+        "scenario": "urgent",
+        "expected": {
+          "action": "maintenance",
+          "target": "M-20",
+          "priority": "urgent"
+        },
+        "actual": {
+          "action": "maintenance",
+          "target": "M-20",
+          "priority": "urgent"
+        },
+        "call_names": [
+          "get_maintenance_policy",
+          "get_machine_queue",
+          "get_machine_health",
+          "get_machine_health",
+          "get_machine_health",
+          "schedule_maintenance",
+          "notify_maintenance"
+        ],
+        "expected_calls": [
+          "get_maintenance_policy",
+          "get_machine_queue",
+          "get_machine_health",
+          "get_machine_health",
+          "get_machine_health",
+          "schedule_maintenance",
+          "notify_maintenance"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    }
+  },
+  "code": "import plant_api\n\ndef run_maintenance_priority():\n    policy = plant_api.get_maintenance_policy()\n    queue = plant_api.get_machine_queue()\n    highest_risk_machine = None\n    highest_risk = -1.0\n\n    for machine_id in queue['machine_ids']:\n        health = plant_api.get_machine_health(machine_id)\n        if health['risk_score'] > highest_risk:\n            highest_risk = health['risk_score']\n            highest_risk_machine = health\n\n    if highest_risk_machine:\n        if highest_risk >= policy['critical_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'urgent', 'high risk detected')\n        elif highest_risk >= policy['service_risk']:\n            plant_api.schedule_maintenance(highest_risk_machine['machine_id'], 'planned', 'service required')\n        else:\n            plant_api.record_monitoring('no service needed')\n        plant_api.notify_maintenance(f\"Action taken for {highest_risk_machine['machine_id']}\")\n\nrun_maintenance_priority()"
+}

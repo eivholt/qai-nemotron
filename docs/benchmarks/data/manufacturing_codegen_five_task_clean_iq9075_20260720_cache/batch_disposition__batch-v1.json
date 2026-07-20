@@ -1,0 +1,133 @@
+{
+  "task": "batch_disposition",
+  "contract_version": "batch-v1",
+  "contract_hash": "e4efea3ea04eee1d2e5fa8519bb929cb20d4104103e0e3c401868fad1f562a02",
+  "sandbox_version": "manufacturing-sandbox-v2",
+  "validator_version": "strict-mock-validator-v2",
+  "model": "ministral3-3b-q4",
+  "accepted_at": "2026-07-19T23:39:19.716898+00:00",
+  "promotion_scenarios": [
+    "normal",
+    "vibration",
+    "quality_spike"
+  ],
+  "promotion_results": {
+    "normal": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "batch_disposition",
+        "scenario": "normal",
+        "expected": {
+          "action": "released",
+          "target": "BATCH-100"
+        },
+        "actual": {
+          "action": "released",
+          "target": "BATCH-100"
+        },
+        "call_names": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "release_batch",
+          "notify_supervisor"
+        ],
+        "expected_calls": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "release_batch",
+          "notify_supervisor"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    },
+    "vibration": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "batch_disposition",
+        "scenario": "vibration",
+        "expected": {
+          "action": "held",
+          "target": "CELL-2"
+        },
+        "actual": {
+          "action": "held",
+          "target": "CELL-2"
+        },
+        "call_names": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "schedule_inspection",
+          "hold_batch",
+          "notify_supervisor"
+        ],
+        "expected_calls": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "schedule_inspection",
+          "hold_batch",
+          "notify_supervisor"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    },
+    "quality_spike": {
+      "passed": true,
+      "summary": {
+        "passed": true,
+        "task": "batch_disposition",
+        "scenario": "quality_spike",
+        "expected": {
+          "action": "quarantined",
+          "target": "BATCH-403"
+        },
+        "actual": {
+          "action": "quarantined",
+          "target": "BATCH-403"
+        },
+        "call_names": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "quarantine_batch",
+          "notify_supervisor"
+        ],
+        "expected_calls": [
+          "get_production_context",
+          "get_policy",
+          "get_quality_counts",
+          "get_sensor_summary",
+          "get_sensor_summary",
+          "quarantine_batch",
+          "notify_supervisor"
+        ],
+        "trace_correct": true,
+        "state_correct": true,
+        "notified": true,
+        "tool_errors": []
+      }
+    }
+  },
+  "code": "import plant_api\n\ndef batch_disposition():\n    context = plant_api.get_production_context()\n    policy = plant_api.get_policy()\n    quality = plant_api.get_quality_counts()\n    machine_data = {m: plant_api.get_sensor_summary(m) for m in context[\"machine_ids\"]}\n\n    defect_rate = quality[\"defects\"] / quality[\"inspected\"] if quality[\"inspected\"] > 0 else 0\n    if defect_rate > policy[\"max_defect_rate\"]:\n        plant_api.quarantine_batch(context[\"batch_id\"], \"high_defect_rate\")\n        plant_api.notify_supervisor(\"Batch quarantined due to defect rate exceeding policy threshold.\")\n    else:\n        inspected_machine = None\n        for machine in context[\"machine_ids\"]:\n            sensor = machine_data[machine]\n            if sensor[\"max_temperature_c\"] > policy[\"max_temperature_c\"] or sensor[\"vibration_rms\"] > policy[\"max_vibration_rms\"]:\n                inspected_machine = machine\n                plant_api.schedule_inspection(machine, \"machine_violation\")\n                break\n        if inspected_machine:\n            plant_api.hold_batch(context[\"batch_id\"], f\"machine_{inspected_machine}_violation\")\n            plant_api.notify_supervisor(f\"Batch held due to machine {inspected_machine} exceeding limits.\")\n        else:\n            plant_api.release_batch(context[\"batch_id\"], \"no_violations\")\n            plant_api.notify_supervisor(\"Batch released as all conditions met.\")\n\nbatch_disposition()"
+}
