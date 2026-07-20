@@ -27,9 +27,9 @@ The following tutorials provide the path leading to this example:
 
 1. [Deploying NVIDIA Llama-3.1-Nemotron-Nano-8B-v1 on Dragonwing IQ9075](https://dragonwingdocs.qualcomm.com/tutorials/deploy-nemotron-nano-on-dragonwing-iq9075)
    introduces the EVK, WSL2 storage, Qualcomm AI Hub, QAIRT, and Genie.
-2. [Agentic LLMs on Dragonwing IQ9075](tutorial_agentic_models_iq9075.md)
+2. [Agentic LLMs on Dragonwing IQ9075](https://github.com/eivholt/qai-nemotron/blob/main/tutorial_agentic_models_iq9075.md)
    compares several small models on function calling and logistics benchmarks.
-3. [Build a Console Shipping Agent on Dragonwing IQ9075](tutorial_build_agentic_shipping_iq9075.md)
+3. [Build a Console Shipping Agent on Dragonwing IQ9075](https://github.com/eivholt/qai-nemotron/blob/main/tutorial_build_agentic_shipping_iq9075.md)
    implements a multi-turn agent with directly registered tools, MCP, and a
    persistent C++ Genie service.
 
@@ -261,7 +261,7 @@ external sockets and subprocesses are blocked in the development sandbox.
 ## Start the persistent model service
 
 Build the C++ service once by following
-[the persistent service section in the shipping tutorial](tutorial_build_agentic_shipping_iq9075.md#build-the-persistent-c-service).
+[the persistent service section in the shipping tutorial](https://github.com/eivholt/qai-nemotron/blob/main/tutorial_build_agentic_shipping_iq9075.md#build-the-persistent-c-service).
 That section pins the tested `qai-appbuilder` commit and includes the small EVK
 compile and loopback-binding patch.
 
@@ -449,7 +449,7 @@ evaluate_batch()
 The model used Python's `for`/`else` construct correctly:
 the release path runs only when no machine summary triggered `break`.
 The complete
-[prompt, raw response, source, timing, and strict ledgers](docs/benchmarks/data/manufacturing_codegen_ministral3b_iq9075_20260719.json)
+[prompt, raw response, source, timing, and strict ledgers](https://github.com/eivholt/qai-nemotron/blob/main/docs/benchmarks/data/manufacturing_codegen_ministral3b_iq9075_20260719.json)
 are retained with the repository.
 
 ## Five-task EVK results
@@ -459,11 +459,11 @@ all 15 visible scenarios:
 
 | Generated program | Attempts before promotion | Model time | Visible cases | Later cache hits |
 |---|---:|---:|---:|---:|
-| [Batch disposition](docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720_cache/batch_disposition__batch-v1.py) | 2 | 136.45 s | 3/3 | 2 |
-| [Maintenance priority](docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720_cache/maintenance_priority__maintenance-v1.py) | 1 | 51.93 s | 3/3 | 2 |
-| [Quality sampling](docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720_cache/quality_sampling__quality-v1.py) | 3 | 218.85 s | 3/3 | 2 |
-| [Energy window](docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720_cache/energy_window__energy-v2.py) | 1 | 49.09 s | 3/3 | 2 |
-| [Spares replenishment](docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720_cache/spares_replenishment__inventory-v1.py) | 1 | 57.64 s | 3/3 | 2 |
+| [Batch disposition](https://github.com/eivholt/qai-nemotron/blob/main/docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720_cache/batch_disposition__batch-v1.py) | 2 | 136.45 s | 3/3 | 2 |
+| [Maintenance priority](https://github.com/eivholt/qai-nemotron/blob/main/docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720_cache/maintenance_priority__maintenance-v1.py) | 1 | 51.93 s | 3/3 | 2 |
+| [Quality sampling](https://github.com/eivholt/qai-nemotron/blob/main/docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720_cache/quality_sampling__quality-v1.py) | 3 | 218.85 s | 3/3 | 2 |
+| [Energy window](https://github.com/eivholt/qai-nemotron/blob/main/docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720_cache/energy_window__energy-v2.py) | 1 | 49.09 s | 3/3 | 2 |
+| [Spares replenishment](https://github.com/eivholt/qai-nemotron/blob/main/docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720_cache/spares_replenishment__inventory-v1.py) | 1 | 57.64 s | 3/3 | 2 |
 | **Total** | **8** | **513.96 s** | **15/15** | **10** |
 
 Model time is the sum of HTTP generation calls and excludes sandbox execution.
@@ -478,7 +478,7 @@ This is why repair behavior and failed-attempt capture belong in the result,
 even when the final case table is 15/15.
 
 The complete clean
-[prompts, raw generations, repair attempts, promotion runs, cache checks, and ledgers](docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720.json)
+[prompts, raw generations, repair attempts, promotion runs, cache checks, and ledgers](https://github.com/eivholt/qai-nemotron/blob/main/docs/benchmarks/data/manufacturing_codegen_five_task_clean_iq9075_20260720.json)
 are retained with the repository. Each generated source also has a neighboring
 JSON cache record containing its contract hash and promotion evidence.
 ## Strict validation

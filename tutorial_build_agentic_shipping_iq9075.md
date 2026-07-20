@@ -29,7 +29,7 @@ IQ9075](https://dragonwingdocs.qualcomm.com/tutorials/deploy-nemotron-nano-on-dr
 covers the EVK, WSL2 storage, Qualcomm AI Hub credentials, QAIRT setup, and Genie
 fundamentals in more detail.
 
-[Agentic LLMs on Dragonwing IQ9075](tutorial_agentic_models_iq9075.md)
+[Agentic LLMs on Dragonwing IQ9075](https://github.com/eivholt/qai-nemotron/blob/main/tutorial_agentic_models_iq9075.md)
 compares the function-calling and logistics behavior of several models. That
 benchmark work led to the model and client design used here.
 
@@ -1037,7 +1037,7 @@ reliable, but it leaves a useful question unanswered: can this model identify
 independent work, request several tools at once, and still wait before taking an
 action that depends on their results?
 
-[The separate multi-tool case](shipping_agent/multitool_demo.py) replaces the
+[The separate multi-tool case](https://github.com/eivholt/qai-nemotron/blob/main/shipping_agent/multitool_demo.py) replaces the
 combined options tool with three read-only observations:
 
 1. `get_pending_shipment`
@@ -1187,7 +1187,7 @@ more dangerous than a Python process with a deliberately tiny import surface.
 
 ### Sandbox generated code
 
-The existing [Python arena](agent_arena/python_arena.py) already uses a lightweight
+The existing [Python arena](https://github.com/eivholt/qai-nemotron/blob/main/agent_arena/python_arena.py) already uses a lightweight
 local sandbox. Each attempt receives a fresh temporary directory containing only
 fixture files. It runs with a minimal environment, `HOME` and `TMPDIR` inside
 that directory, a parent timeout, and Linux limits of two CPU seconds, 256 MB of
@@ -1209,7 +1209,7 @@ reach; it does not make an invalid logistics decision valid.
 
 ### Reuse only validated programs
 
-[The arena's reuse modes](agent_arena/README.md#repair-and-reuse) illustrate three
+[The arena's reuse modes](https://github.com/eivholt/qai-nemotron/blob/main/agent_arena/README.md#repair-and-reuse) illustrate three
 useful policies:
 
 - `none` asks the model to generate a fresh program for every case.
