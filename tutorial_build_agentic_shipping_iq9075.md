@@ -1,11 +1,11 @@
-# Build a Console Shipping Agent on Dragonwing IQ9075 using MCP Tool-calling Agentic AI
+# Build a Console Shipping Agent on Dragonwing IQ9075 using MCP Tool-calling
 
 **Author:** [Eivind Holt](https://www.linkedin.com/in/eivholt/), July 2026  
 **Repository:** [github.com/eivholt/qai-nemotron](https://github.com/eivholt/qai-nemotron)  
 **Target:** [Qualcomm Dragonwing IQ-9075 EVK / QCS9075 / Hexagon v73](https://www.qualcomm.com/developer/hardware/qualcomm-iq-9075-evaluation-kit-evk). Hardware generously sponsored by Qualcomm 🙏  
 **Model:** [mistralai/Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512) Q4_K_M GGUF running on device NPU
 
-Large language models become much more useful at the edge when they can inspect
+Large language models that fit edge devices have passed the boundary where they can replace traditionally hardcoded controlflow logic with tool reasoning. They can inspect
 local state, choose an action, execute a bounded tool, and react to the result.
 This tutorial builds that loop as a small console application on the Qualcomm
 Dragonwing IQ9075 EVK.
