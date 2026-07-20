@@ -765,6 +765,85 @@ report preparation, production coordination, and recovery planning.
 Return to the first EVK shell and press `Ctrl+C`. The launcher stops both the
 Python adapter and the persistent C++ service.
 
+## Selecting cached programs in production
+
+A production system needs a way to select the right reusable program, but that
+selection does not normally need to be inferred by the model. In this example,
+the caller already knows that it is running `quality_sampling`, so it looks for
+`quality_sampling__quality-v1.json`. The contract hash then verifies that the
+program still matches the current prompt, API, policy, sandbox, validator, and
+promotion scenarios.
+
+A production workflow registry could record the same relationship explicitly:
+
+```json
+{
+  "workflow_id": "quality_sampling",
+  "contract_version": "quality-v1",
+  "input_schema": "plant-quality-event-v3",
+  "required_apis": [
+    "get_active_lot",
+    "get_station_quality",
+    "release_lot",
+    "increase_sampling",
+    "quarantine_lot"
+  ],
+  "policy_version": "quality-policy-2026-07",
+  "artifact_hash": "...",
+  "approval_status": "production-approved"
+}
+```
+
+For a structured event, ordinary application code can select the workflow:
+
+```python
+workflow_id = EVENT_WORKFLOWS[event["type"]]
+artifact = registry.find(
+    workflow_id=workflow_id,
+    contract_version=current_contract,
+    approval_status="production-approved",
+)
+```
+
+A quality-control event maps to the quality workflow, while an energy-planning
+event maps to the energy workflow. This path is fast, predictable, and does not
+spend an inference request deciding which file to run.
+
+Model routing becomes useful when the input is ambiguous natural language. The
+model can choose from a small set of named workflows such as
+`quality_sampling`, `maintenance_priority`, and `batch_disposition`. This is
+ordinary tool calling: the model selects a logical capability, while application
+code verifies that the required data is available, the artifact is current and
+approved, and its effects are permitted. The model should not select arbitrary
+filenames or unreviewed source.
+
+A practical production design therefore mixes conventional routing, tool
+calling, cached execution, and code generation:
+
+```mermaid
+flowchart TD
+    A["Event or operator request"] --> B{"Structured task?"}
+    B -->|Yes| C["Deterministic workflow lookup"]
+    B -->|No| D["LLM selects a named workflow tool"]
+    C --> E{"Approved compatible artifact?"}
+    D --> E
+    E -->|Yes| F["Execute cached code in sandbox"]
+    F --> G{"Validation passed?"}
+    G -->|Yes| H["Submit actions through policy broker"]
+    G -->|No| I["Escalate or request repair"]
+    E -->|No| J["Generate candidate code"]
+    J --> K["Sandbox and promotion tests"]
+    K -->|Approved| F
+    K -->|Rejected| I
+```
+
+Code generation belongs mainly in the deployment or repair path. Validated,
+immutable cached code belongs in the production execution path. Direct tool
+calling remains useful for unusual cases that do not match a reusable workflow.
+Newly generated code should pass sandbox execution, hidden regression cases,
+policy checks, and any required human approval before it can reach a live
+operations broker.
+
 ## Conclusion
 
 Code generation extends edge agentic AI beyond one-tool-at-a-time selection.
