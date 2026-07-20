@@ -91,24 +91,21 @@ translation around both the persistent C++ service and `genie-t2t-run`.
 
 The running path is intentionally small:
 
-```text
-Console task
-    |
-Pydantic AI agent
-    |  OpenAI-compatible chat request
-Model-specific Python adapter on 127.0.0.1:8001
-    |  native Mistral prompt; parsed OpenAI tool call
-Persistent Qualcomm GenieAPIService on 127.0.0.1:8911
-    |  QNN contexts
-IQ9075 HTP/NPU
-
-Model tool choice
-    |
-Direct Pydantic function or MCP stdio call
-    |
-Mock shipping runtime
-    |  deterministic observation or validation error
-Next model turn
+```mermaid
+flowchart TD
+    A["Console task"] --> B["Pydantic AI agent"]
+    B -->|"OpenAI-compatible chat request"| C["Model-specific Python adapter<br/>127.0.0.1:8001"]
+    C -->|"Native Mistral prompt"| D["Persistent Qualcomm GenieAPIService<br/>127.0.0.1:8911"]
+    D -->|"QNN contexts"| E["IQ9075 HTP/NPU"]
+    E -->|"Generated tokens"| D
+    D -->|"Model text"| C
+    C -->|"Parsed OpenAI tool call"| B
+    B -->|"Model tool choice"| F{"Tool transport"}
+    F -->|"Direct"| G["Registered Pydantic function"]
+    F -->|"MCP"| H["MCP stdio call"]
+    G --> I["Mock shipping runtime"]
+    H --> I
+    I -->|"Observation or validation error"| B
 ```
 
 Both HTTP layers listen only on `127.0.0.1`. The Python adapter renders the
@@ -1132,126 +1129,22 @@ on successful scheduling. Useful multi-tool behavior parallelizes only calls
 that are genuinely independent and keeps dependent actions in later turns.
 
 ## Generate and execute coordination code
-
-There is a good reason to test a second form of autonomy: instead of returning one
-structured tool call, the model returns a short program that calls several
-scenario APIs. Coding-tuned models may express loops, filtering, data conversion,
-and error handling more reliably in Python than through a sequence of exact
-function-call envelopes. A successful program can also reduce model turns and be
-reused when only shipment parameters change.
-
-This is a different capability from the direct agent above and should be scored
-separately. The direct agent decides after every tool result. A code-generating
-agent plans a bounded section of control flow up front, then delegates its
-execution to a sandbox. Comparing both approaches on the same shipping state and
-the same action ledger can reveal whether a failure comes from planning, tool-call
-formatting, generated-code correctness, or runtime integration.
-
-### A fair shipping-code experiment
-
-Start with Python and give the model a small documented module such as
-`shipping_api`. It should expose the same mock operations used by the direct
-agent, but no filesystem, network, shell, or device access beyond the scenario:
-
-```python
-from shipping_api import (
-    get_pending_shipment,
-    get_carrier_options,
-    get_dock_options,
-    schedule_shipment,
-    hold_shipment,
-    escalate_shipment,
-    notify_dispatch,
-)
-```
-
-The prompt should state the operational goal and API contracts, then ask for one
-complete program. It should not provide the required call order or case-specific
-identifiers. The runner executes the program once and evaluates the same strict
-facts as the function-calling agent:
-
-- the final shipment disposition;
-- the selected carrier and dock when scheduled;
-- notification state;
-- the complete API-call ledger, including excess or rejected calls;
-- syntax errors, runtime errors, timeouts, and sandbox violations;
-- repair attempts, model turns, and whether validated code was reused.
-
-A useful comparison would run the routine, cold-chain, weather, and hazardous
-material scenarios through both direct tools and generated Python. Parameter-only
-mutations should then change shipment IDs, capacities, deadlines, and available
-assets without changing the API. This tests whether the model wrote a general
-program instead of embedding one benchmark answer.
-
-JavaScript is worth testing after Python if the deployment includes a small
-sandboxed runtime. It tests the same idea and is closer to OpenAI's Programmatic
-Tool Calling protocol described below. Raw terminal commands should come last and
-be reported separately. Shell quoting, pipelines, environment inheritance, and a
-much larger executable surface make them harder to validate and substantially
-more dangerous than a Python process with a deliberately tiny import surface.
-
-### Sandbox generated code
-
-The existing [Python arena](https://github.com/eivholt/qai-nemotron/blob/main/agent_arena/python_arena.py) already uses a lightweight
-local sandbox. Each attempt receives a fresh temporary directory containing only
-fixture files. It runs with a minimal environment, `HOME` and `TMPDIR` inside
-that directory, a parent timeout, and Linux limits of two CPU seconds, 256 MB of
-address space, and a 2 MB output-file size. An injected `sitecustomize.py`
-blocks normal sockets, `subprocess.Popen`, and `os.system`.
-
-These controls are useful against mistakes, runaway loops, and accidental network
-or shell use. They are not a hardened boundary against deliberately hostile
-Python. A production or public demo should add an unprivileged disposable
-container or VM, a read-only root filesystem, a small writable temporary mount,
-cgroup and process limits, syscall filtering, no device-node access, and no
-external network route. If an HTTP-shaped mock API is required, expose only that
-service through a private namespace or local socket. Never place real credentials
-inside the generated program's environment.
-
-The API implementation must still enforce authorization, valid state transitions,
-idempotency, and approval requirements. Sandboxing limits what generated code can
-reach; it does not make an invalid logistics decision valid.
-
-### Reuse only validated programs
-
-[The arena's reuse modes](https://github.com/eivholt/qai-nemotron/blob/main/agent_arena/README.md#repair-and-reuse) illustrate three
-useful policies:
-
-- `none` asks the model to generate a fresh program for every case.
-- `prompt` supplies previously successful code as an example and measures how well
-  the model adapts it to new parameters.
-- `execute_first` runs cached code before invoking the model, then requests repair
-  or replacement only if validation fails.
-
-Code should enter the cache only after it executes successfully and passes the
-strict state and call-ledger validator. Cache keys should include the task family,
-API/schema version, policy version, and runtime version. Any interface or safety
-policy change must invalidate the entry. Store the source, validation result, and
-provenance together so reuse remains auditable.
-
-This can create practical edge value. A model may generate and validate a program
-once, while later shipments with different parameters use the same code without
-another inference. If the environment changes, the failed validation becomes
-structured repair feedback rather than permission to continue with a partial or
-unsafe result.
-
-Earlier EVK Python-arena smoke runs showed that Nemotron with thinking off,
-Nemotron with thinking on, and stock Llama could generate or reuse programs for
-bounded JSON, CSV, log, and fixture-HTTP transformations. Their latest selected
-four-case runs all completed, with cache hits and one successful
-execution-feedback repair. Those tasks are intentionally small and do not prove
-shipping-API orchestration. Ministral has also not yet been validated on this
-shipping-code variant. The experiment is therefore worthwhile, but its results
-should remain separate from the validated direct-tool results until every model
-runs the same mutated scenarios under the same sandbox and strict ledger.
+Code generation is a different form of autonomy from tool calling. A
+tool-calling agent chooses one or more declared actions, receives their results,
+and decides what to do in later model turns; a code-generating agent writes a
+bounded program that can perform loops, calculations, and several API calls
+inside a sandbox. That program can be tested, approved, cached, and reused
+without another model request, but it also introduces separate concerns around
+malicious code, validation, and cache selection. This approach is covered in **TODO:Update link when published**
+[Build a Code-Generating Manufacturing Agent on Dragonwing IQ9075](https://github.com/eivholt/qai-nemotron/blob/main/tutorial_codegen_manufacturing_iq9075.md).
 
 ## What frontier agent platforms add
 
-The successful multi-tool case should not be read as parity with a current
-frontier agent. It demonstrates a valuable bounded behavior: one model identifies
-independent reads, calls them together, evaluates the returned facts, and performs
-dependent actions in later turns. Frontier platforms are moving beyond this
-request-and-response loop.
+The successful multi-tool case does not mean that this small model matches a
+current frontier agent. It shows a useful but limited skill: the model can request
+independent information together, inspect the results, and then choose the next
+actions. Frontier platforms can handle more complex workflows than this
+step-by-step loop.
 
 As of July 2026, the [GPT-5.6 family](https://openai.com/index/gpt-5-6/)
 combines stronger agent-trained models with orchestration features in the
@@ -1363,26 +1256,6 @@ only when they are independent, and dependent actions taken after their results
 arrive. Frontier features provide a roadmap for future edge runtimes and models,
 while the smaller local agent provides privacy, offline operation, predictable
 cost, and useful autonomy today.
-
-## Replace the mocks carefully
-
-A production version can keep the same tool signatures while replacing
-`ShippingRuntime` methods with real adapters:
-
-- warehouse management queries;
-- carrier and route APIs;
-- loading-dock reservations;
-- dispatch messaging;
-- audit and incident systems.
-
-Before doing so, add authentication, authorization, idempotency keys, persistent
-state, retry policy, timeouts, concurrency control, and structured audit logs.
-Write tools so a repeated request is harmless. Keep irreversible actions behind
-approval or a separate policy service.
-
-Do not give the model direct access to robot motor control, emergency systems,
-or arbitrary shell execution. The agent is suited to planning and coordination;
-real-time control and safety interlocks belong in deterministic systems.
 
 ## Troubleshooting
 
