@@ -2,12 +2,12 @@
 
 **Author:** [Eivind Holt](https://www.linkedin.com/in/eivholt/), June 2026  
 **Repository:** [github.com/eivholt/qai-nemotron](https://github.com/eivholt/qai-nemotron)  
-**Target:** [Qualcomm Dragonwing IQ-9075 EVK / QCS9075 / Hexagon v73](https://www.qualcomm.com/developer/hardware/qualcomm-iq-9075-evaluation-kit-evk). Hardware generously sponsored by Qualcomm 🙏  
+**Target:** [Qualcomm Dragonwing IQ-9075 EVK / QCS9075 / Hexagon v73](https://www.qualcomm.com/developer/hardware/qualcomm-iq-9075-evaluation-kit-evk). Hardware generously sponsored by Qualcomm  
 **Model:** [mistralai/Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512) Q4_K_M GGUF running on device NPU
 
-`Function calling` agentic AI asks a language model to choose the next tool(s). `Code generation and -execution` asks it to generate a small program that can call several APIs, calculate derived values, branch on policy. Successful code can be saved and reused when input data changes.
+`Function calling` agentic AI asks a language model to choose the next tool(s). `Code generation and -execution` asks it to generate a small program that can call several APIs, calculate derived values and branch on policy. Successful code can be saved and reused when input data changes.
 
-This tutorial demonstrates code generating and -execution AI agents on the Qualcomm Dragonwing IQ9075 EVK.
+This tutorial demonstrates AI agents that can generate and execute code on the Qualcomm Dragonwing IQ9075 EVK.
 A local Ministral 3B model generates five different Python programs for mocked
 production operations: batch disposition, maintenance priority, quality
 sampling, energy scheduling, and spare-parts replenishment. Python executes each
@@ -18,8 +18,7 @@ While this demonstrates that edge-fit models are capable for code generation and
 
 > Desired behavior and requirements can be provided as natural language prompts, capabilities and service descriptions can be plugged in, and the system will generate itself ad-hoc! Whether this is an utopian scenario for automation, or the beginning of Skynet is up to us as responsible developers to decide.
 
-The example is console based and sandboxed. It does not control a machine, safety interlock, or
-real-time process.
+The example is console based and sandboxed.
 
 ## Related tutorials
 
@@ -138,8 +137,7 @@ incur that token-generation cost.
 
 ## Desktop export environment
 
-Keep the repository and build directories in the WSL2 Linux filesystem. The
-first tutorial explains the storage setup in more detail.
+The first tutorial explains the storage setup in more detail.
 
 ```bash
 source "$HOME/miniconda3/etc/profile.d/conda.sh"
@@ -192,9 +190,9 @@ mkdir -p logs
   2>&1 | tee logs/ministral3_3b_q4_export.log
 ```
 
-The validated export used QAIRT 2.47 and took about 25 minutes on the Desktop.
+The validated export used QAIRT 2.47 and took about 25 minutes on the desktop PC.
 Allow roughly 45 to 50 GB of fast working storage. The final Genie package is
-about 3.3 GB; the original GGUF is about 2.15 GB. The preceding shipping tutorial
+about 3.3 GB; the original GGUF is about 2.15 GB. The preceding shipping tutorials
 contains the fuller resource table and export troubleshooting.
 
 ## Match the EVK runtime
@@ -203,7 +201,7 @@ A model compiled with QAIRT 2.47 must use matching 2.47 target and Hexagon
 libraries. Keep them beside the board's default QAIRT installation:
 
 ```bash
-EVK=ubuntu@192.168.1.158
+EVK=ubuntu@<EVK-IP>
 QAIRT_DEVICE_ROOT=/home/ubuntu/qairt-2.47.0.260601
 
 ssh "$EVK" "mkdir -p \
@@ -393,9 +391,6 @@ same file, with no additional model request.
 | Thermal drift | 0 | Yes | Pass |
 | Quality spike | 0 | Yes | Pass |
 
-This is a successful functional validation, not a statistical reliability
-claim. Repeated fresh generations and additional hidden mutations would be
-required to estimate a production success rate.
 
 The generated program, reformatted only for line length, was:
 
@@ -495,8 +490,7 @@ The validator is outside the generated program. It requires:
 - the expected final state and inspection target.
 
 This prevents a common false positive: code can reach the correct final status
-after performing an invalid extra action. Such a run is still a failure. The
-validator does not contain code that chooses an action for the model.
+after performing an invalid extra action. Such a run is still a failure.
 
 ## A useful failure
 
