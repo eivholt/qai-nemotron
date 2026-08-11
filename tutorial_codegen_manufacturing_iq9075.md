@@ -28,7 +28,7 @@ The following tutorials provide the path leading to this example:
    introduces the EVK, WSL2 storage, Qualcomm AI Hub, QAIRT, and Genie.
 2. [Agentic LLMs on Dragonwing IQ9075](https://github.com/eivholt/qai-nemotron/blob/main/tutorial_agentic_models_iq9075.md)
    compares several small models on function calling and logistics benchmarks.
-3. [Build a Console Shipping Agent on Dragonwing IQ9075](https://github.com/eivholt/qai-nemotron/blob/main/tutorial_build_agentic_shipping_iq9075.md)
+3. [Build a Shipping Agent on Dragonwing IQ9075](https://github.com/eivholt/qai-nemotron/blob/main/tutorial_build_agentic_shipping_iq9075.md)
    implements a multi-turn agent with directly registered tools, MCP, and a
    persistent C++ Genie service.
 

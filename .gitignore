@@ -19,3 +19,4 @@ agent_arena/.env
 logs/
 qwen3_iq9075_genie/
 *.orig
+.codex-remote-attachments/

@@ -5,38 +5,28 @@
 **Target:** [Qualcomm Dragonwing IQ-9075 EVK / QCS9075 / Hexagon v73](https://www.qualcomm.com/developer/hardware/qualcomm-iq-9075-evaluation-kit-evk). Hardware generously sponsored by Qualcomm 🙏  
 **Model:** [mistralai/Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512) Q4_K_M GGUF running on device NPU
 
-Large language models that fit edge devices have passed the boundary where they can replace traditionally hardcoded controlflow logic with tool reasoning. They can inspect
-local state, choose an action, execute a bounded tool, and react to the result.
-This tutorial builds that loop as a small console application on the Qualcomm
-Dragonwing IQ9075 EVK.
+Large language models that fit edge devices have passed the boundary where they can replace traditionally hardcoded controlflow logic with tool reasoning. They can inspect local state, choose an action, execute a tool, and react to the result.
+This tutorial builds that loop as a small console application on the Qualcomm Dragonwing IQ9075 EVK.
 
-The example is an outbound shipping coordinator. It reads one pending shipment,
-checks carriers and loading docks, and chooses one of three outcomes:
+The example is an outbound shipping coordinator. It reads one pending shipment, checks carriers and loading docks, and chooses one of three outcomes:
 
 - schedule a compliant carrier and dock;
 - hold a shipment when a temporary problem can clear; or
 - escalate when no safe plan exists.
 
-All operational tools are deterministic Python mocks. They stand in for a
-warehouse management system, carrier API, route service, and dispatch channel.
-All six tools are visible from the first model turn. The model independently
-chooses what to inspect, which disposition to record, which resources to use,
-and when to notify dispatch. Tool code validates hard operational constraints
-before changing state.
+![Qualcomm Dragonwing IQ-9075 EVK](resources/shipping_agent_banner.png)
 
-No web dashboard or graphical interface is required. Two console shells show the
-model server and the complete agent trace.
+All operational tools are deterministic Python mocks. They stand in for a warehouse management system, carrier API, route service, and dispatch channel. All six tools are visible from the first model turn. The model independently chooses what to inspect, which disposition to record, which resources to use, and when to notify dispatch. Tool code validates hard operational constraints
+before changing state.
 
 ## Related tutorials
 
 [Deploying NVIDIA Llama-3.1-Nemotron-Nano-8B-v1 on Dragonwing
 IQ9075](https://dragonwingdocs.qualcomm.com/tutorials/deploy-nemotron-nano-on-dragonwing-iq9075)
-covers the EVK, WSL2 storage, Qualcomm AI Hub credentials, QAIRT setup, and Genie
-fundamentals in more detail.
+covers the EVK, WSL2 storage, Qualcomm AI Hub credentials, QAIRT setup, and Genie fundamentals in more detail.
 
 [Agentic LLMs on Dragonwing IQ9075](https://github.com/eivholt/qai-nemotron/blob/main/tutorial_agentic_models_iq9075.md)
-compares the function-calling and logistics behavior of several models. That
-benchmark work led to the model and client design used here.
+compares the function-calling and logistics behavior of several models. That benchmark work led to the model and client design used here.
 
 <!-- Publication TODO: replace the repository link above with the Qualcomm-hosted URL after the second tutorial is published. -->
 
@@ -70,22 +60,12 @@ The runtime includes four scenarios:
 
 ## Why Ministral 3B
 
-The example uses
-[Mistral Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512)
-with its official Q4_K_M GGUF weights. In the preceding IQ9075 comparison, this
-model was the most stable accelerator-backed choice for bounded tool use. It
-scored 132/170 on the shared non-web BFCL selection and completed 9/14 strict
-hospital logistics cases.
+The example uses [Mistral Ministral-3-3B-Instruct-2512](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512)
+with its official Q4_K_M GGUF weights. In the preceding IQ9075 comparison, this model was the most stable accelerator-backed choice for bounded tool use. It scored 132/170 on the shared non-web BFCL selection and completed 9/14 strict custom hospital logistics cases.
 
-The IQ9075 Q4 package generated about 4.93 tokens/s in saved agent profiles. That
-is slower than some QAI Hub W4A16 models, but the model was more dependable at
-multi-turn tool use. Model selection should therefore consider completed work,
-not tokens/s alone.
+The IQ9075 Q4 package generated about 5 tokens/s in saved agent profiles. That is slower than some QAI Hub W4A16 models, but the model was more dependable at multi-turn tool use. Model selection should therefore consider completed work, not tokens/s alone.
 
-Mistral's own usage instructions require the native Mistral tool-call parser when
-the source model is hosted with vLLM. Genie does not provide that OpenAI adapter
-itself. The repository's `mistral_tool` renderer and parser perform the same
-translation around both the persistent C++ service and `genie-t2t-run`.
+Mistral's own usage instructions require the native Mistral tool-call parser when the source model is hosted with vLLM. Genie does not provide that OpenAI adapter itself. The repository's `mistral_tool` renderer and parser perform the same translation around both the persistent C++ service and `genie-t2t-run`.
 
 ## How the pieces fit
 
@@ -108,29 +88,17 @@ flowchart TD
     I -->|"Observation or validation error"| B
 ```
 
-Both HTTP layers listen only on `127.0.0.1`. The Python adapter renders the
-complete request once with the native Mistral template, sends that text through
-an identity prompt in Qualcomm's C++ `GenieAPIService`, parses the returned
-model text, and gives Pydantic AI a normal OpenAI-compatible response. Pydantic
-AI then executes the selected tool directly or discovers and calls it through
-MCP before including the result in the next model turn.
+Both HTTP layers listen only on `127.0.0.1`. The Python adapter renders the complete request once with the native Mistral template, sends that text through an identity prompt in Qualcomm's C++ `GenieAPIService`, parses the returned model text, and gives Pydantic AI a normal OpenAI-compatible response. Pydantic AI then executes the selected tool directly or discovers and calls it through
+MCP before including the result in the next model turn. 
 
-The C++ process loads the model and QNN contexts once. It resets the Genie dialog
-for each HTTP request because the Python adapter already supplies the complete
-conversation, but that reset does not reload the model. Keeping rendering in one
-place also avoids applying a generic service template on top of the model's
-native Mistral prompt.
+The C++ process loads the model and QNN contexts once. It resets the Genie dialog for each HTTP request because the Python adapter already supplies the complete conversation, but that reset does not reload the model. Keeping rendering in one
+place also avoids applying a generic service template on top of the model's native Mistral prompt.
 
-The repository retains a second, highly inspectable bridge around
-`genie-t2t-run`. It starts a new CLI process for each model turn and records
-prompts, raw responses, parser decisions, and Genie profiles. That makes it
-useful for model integration tests and parser debugging, while the persistent
-C++ path is the better live-demo backend.
+The repository retains a second, highly inspectable bridge around `genie-t2t-run`. It starts a new CLI process for each model turn and records prompts, raw responses, parser decisions, and Genie profiles. That makes it useful for model integration tests and parser debugging, while the persistent C++ path is the better live-demo backend.
 
 ## Resource expectations
 
-The validated export used QAIRT 2.47 and took about 25 minutes on the Desktop.
-The exact duration depends on storage and CPU performance.
+The validated export used QAIRT 2.47 and took about 25 minutes on the desktop PC.
 
 | Item | Observed size or time |
 |---|---:|
@@ -141,17 +109,9 @@ The exact duration depends on storage and CPU performance.
 | Side-by-side EVK QAIRT 2.47 runtime | about 0.54 GB |
 | Export time | about 25 minutes |
 
-Reserve at least 45 to 50 GB of fast Desktop storage for the complete build.
-The successful Desktop had 192 GB of RAM, but peak export RAM was not captured,
-so this work does not establish a smaller minimum. The generated bundle itself
-fits comfortably in the EVK's system memory. Storage figures use decimal GB.
+Reserve at least 45 to 50 GB of fast Desktop storage for the complete build. The successful Desktop had 192 GB of RAM, but peak export RAM was not captured, so this work does not establish a smaller minimum. The generated bundle itself fits comfortably in the EVK's system memory.
 
 ## Prepare the Desktop export environment
-
-These commands assume the repository is in
-`~/repos-native/qai-nemotron` inside WSL2. The earlier deployment tutorial
-explains why large Linux builds should remain in the WSL2 filesystem instead of
-under `/mnt/c`.
 
 Create an isolated environment:
 
@@ -181,18 +141,14 @@ export LD_LIBRARY_PATH="$QAIRT_SDK_ROOT/lib/x86_64-linux-clang:${LD_LIBRARY_PATH
 qairt-vm -i
 ```
 
-The final build suffix may differ in a later 2.47 package. Use the directory
-printed by `qairt-vm fetch` if it is not `2.47.0.260601`.
+The final build suffix may differ in a later 2.47 package. Use the directory printed by `qairt-vm fetch` if it is not `2.47.0.260601`.
 
-Keep the `qairt-dev` package in control of Python imports in this environment.
-Do not source the full SDK `envsetup.sh`; it can prepend a second `qairt`
-Python tree and shadow the builder package. The two path exports above supply
-the Desktop binaries and shared libraries needed by the builder.
+Keep the `qairt-dev` package in control of Python imports in this environment. Do not source the full SDK `envsetup.sh`; it can prepend a second `qairt`
+Python tree and shadow the builder package. The two path exports above supply the Desktop binaries and shared libraries needed by the builder.
 
 ## Download the official GGUF
 
-The publisher provides
-[`Ministral-3-3B-Instruct-2512-Q4_K_M.gguf`](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-GGUF/blob/main/Ministral-3-3B-Instruct-2512-Q4_K_M.gguf)
+The publisher provides [`Ministral-3-3B-Instruct-2512-Q4_K_M.gguf`](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-GGUF/blob/main/Ministral-3-3B-Instruct-2512-Q4_K_M.gguf)
 in the official Mistral repository.
 
 ```bash
@@ -204,8 +160,7 @@ hf download \
   --local-dir "$HOME/models/ministral3_3b"
 ```
 
-The Q4_K_M file is already weight-quantized. QAIRT still has to ingest the GGUF,
-construct the IQ9075 graph, compile the HTP contexts, and package the result for
+The Q4_K_M file is already weight-quantized. QAIRT still has to ingest the GGUF, construct the IQ9075 graph, compile the HTP contexts, and package the result for
 Genie. This is therefore more than copying a GGUF to the device.
 
 ## Compile and export for IQ9075
@@ -239,16 +194,14 @@ The deployable package is:
     `-- ...
 ```
 
-Do not mix a bundle compiled by QAIRT 2.47 with the board's default QAIRT 2.45
-runtime. That combination fails while creating context zero with QNN error 5000.
+Do not mix a bundle compiled by QAIRT 2.47 with the board's default QAIRT 2.45 runtime. That combination fails while creating context zero with QNN error 5000.
 
 ## Install QAIRT 2.47 beside the EVK default
 
-Keeping 2.47 beside `/opt/qairt/current` avoids changing every existing model
-on the board. Set the current EVK address, then create the target directories:
+Keeping 2.47 beside `/opt/qairt/current` avoids changing every existing model on the board. Set the current EVK address, then create the target directories:
 
 ```bash
-EVK=ubuntu@192.168.1.158
+EVK=ubuntu@<EVK_IP>
 QAIRT_DEVICE_ROOT=/home/ubuntu/qairt-2.47.0.260601
 
 ssh "$EVK" "mkdir -p \
@@ -292,9 +245,7 @@ rsync -ah \
   "$EVK:~/qai-nemotron/"
 ```
 
-The bridge also expects `~/qairt-env.sh` from the base EVK setup in the first
-tutorial. It supplies the normal device environment before the launcher adds the
-2.47 paths.
+The bridge also expects `~/qairt-env.sh` from the base EVK setup in the first tutorial. It supplies the normal device environment before the launcher adds the 2.47 paths.
 
 ## Prepare the agent environment on the EVK
 
@@ -323,19 +274,12 @@ Create the deterministic Genie configuration:
 python3 -m shipping_agent.prepare_bundle "$HOME/ministral_q4_genie_export"
 ```
 
-This writes `genie_config.agent.json` with seed 42, temperature 0,
-`top-k=1`, and `top-p=1.0`. It also writes the C++ service's identity
-`prompt.json` and creates root-level relative links to the tokenizer, backend
-extension, and QNN context binaries under `artifacts/`. The links consume
-negligible storage and accommodate the sample service's basename lookup. The
-original exported configuration and artifacts are not modified.
+This writes `genie_config.agent.json` with seed 42, temperature 0, `top-k=1`, and `top-p=1.0`. It also writes the C++ service's identity `prompt.json` and creates root-level relative links to the tokenizer, backend extension, and QNN context binaries under `artifacts/`. The links consume negligible storage and accommodate the sample service's basename lookup. The original exported configuration and artifacts are not modified.
 
 ## Build the persistent C++ service
 
-The live demo uses Qualcomm's open-source
-[`GenieAPIService`](https://github.com/qualcomm/qai-appbuilder/tree/main/samples/genie/c%2B%2B/Service).
-The validated build pins `qai-appbuilder` commit `86ce07a` so that source and
-commands remain reproducible:
+The live demo uses Qualcomm's open-source [`GenieAPIService`](https://github.com/qualcomm/qai-appbuilder/tree/main/samples/genie/c%2B%2B/Service).
+The validated build pins `qai-appbuilder` commit `86ce07a` so that source and commands remain reproducible:
 
 ```bash
 sudo apt-get install -y build-essential cmake git
@@ -349,11 +293,7 @@ git submodule update --init --recursive
 git apply "$HOME/qai-nemotron/shipping_agent/qai_appbuilder_86ce07a_shipping.patch"
 ```
 
-The recursive submodules are required; without them CMake stops when it cannot
-find headers such as `CLI/CLI.hpp`. The small repository patch removes an
-invalid extra `std::` qualification rejected by the EVK's GCC 13 compiler and
-changes the service's hard-coded bind address from `0.0.0.0` to `127.0.0.1`.
-It does not add a model template or tool parser.
+The recursive submodules are required; without them CMake stops when it cannot find headers such as `CLI/CLI.hpp`. The small repository patch removes an invalid extra `std::` qualification rejected by the EVK's GCC 13 compiler and changes the service's hard-coded bind address from `0.0.0.0` to `127.0.0.1`. It does not add a model template or tool parser.
 
 Configure and build on the EVK:
 
@@ -366,15 +306,9 @@ cmake -S "$SERVICE_SRC" -B "$SERVICE_SRC/build_linux" -DCMAKE_BUILD_TYPE=Release
 cmake --build "$SERVICE_SRC/build_linux" -j2
 ```
 
-Keep `QNN_SDK_ROOT` exported during both commands. The nested AppBuilder build
-reads it from the environment while compiling against the EVK's installed QNN
-development headers. At launch, the script selects the side-by-side QAIRT 2.47
-libraries needed by this model bundle.
+Keep `QNN_SDK_ROOT` exported during both commands. The nested AppBuilder build reads it from the environment while compiling against the EVK's installed QNN development headers. At launch, the script selects the side-by-side QAIRT 2.47 libraries needed by this model bundle.
 
-A clean checkout with only this small source patch completed all four strict
-direct-tool scenarios on the EVK in 2m 20.6s. This confirms that the live demo
-does not depend on the earlier experimental C++ model-template or tool-parser
-patches used elsewhere in the model comparison work.
+A clean checkout with only this small source patch completed all four strict direct-tool scenarios on the EVK in 2m 20.6s. This confirms that the live demo does not depend on the earlier experimental C++ model-template or tool-parser patches used elsewhere in the model comparison work.
 
 ## Start the local model server
 
@@ -397,21 +331,15 @@ If the QAIRT directory has a different suffix, set it explicitly:
 QAIRT_ROOT="$HOME/qairt-2.47.0.YOUR_BUILD" ./shipping_agent/run_ministral_cpp_server.sh
 ```
 
-The launcher starts `GenieAPIService` on port 8911, loads the model once, waits
-for readiness, and starts the model-specific Python adapter on port 8001. The
-adapter uses the native Mistral tool template and exposes every parsed call. It
-does not silently keep only the first call when a model emits extras.
+The launcher starts `GenieAPIService` on port 8911, loads the model once, waits for readiness, and starts the model-specific Python adapter on port 8001. The adapter uses the native Mistral tool template and exposes every parsed call. It does not silently keep only the first call when a model emits extras.
 
-For inspectable model integration and parser regression tests, stop the C++
-server first and start the CLI bridge instead:
+For inspectable model integration and parser regression tests, stop the C++ server first and start the CLI bridge instead:
 
 ```bash
 ./shipping_agent/run_ministral_server.sh
 ```
 
-That bridge has the same public endpoint and parser, but launches
-`genie-t2t-run` separately for every model request. Do not run both backends at
-the same time because they share port 8001 and the HTP resources.
+That bridge has the same public endpoint and parser, but launches `genie-t2t-run` separately for every model request. Do not run both backends at the same time because they share port 8001 and the HTP resources.
 
 ## Test the Python tools without a model
 
@@ -435,8 +363,7 @@ Then exercise every mock directly:
 python -m shipping_agent.app --scenario all --scripted
 ```
 
-The scripted mode proves that the mock world and expected outcomes are
-self-consistent. It does not measure model intelligence.
+The scripted mode proves that the mock world and expected outcomes are self-consistent. It does not measure model intelligence.
 
 ## Run the agent
 
@@ -464,9 +391,7 @@ python -m shipping_agent.app --scenario all --transport direct --repeat 2
 
 ### Weather-closure example
 
-The following transcript came from the persistent C++ runner. Only whitespace
-and terminal labels have been rearranged to make the JSON easier to read. The
-complete system instruction is shown in the next section.
+The following transcript came from the persistent C++ runner. Only whitespace and terminal labels have been rearranged to make the JSON easier to read. The vcomplete system instruction is shown in the next section.
 
 User input:
 
@@ -501,7 +426,7 @@ The model selected and executed these four tool turns:
       "arguments": {}
     },
     "tool_result": {
-      "excluded_carriers": [
+      "excluded_wcarriers": [
         {
           "assessment": "incompatible",
           "capacity_pallets": 2,
@@ -634,21 +559,17 @@ Raw prompt/response records: /home/ubuntu/shipping_agent_results/cpp_adapter/
 C++ server log: /tmp/iq9075_cpp_case_demo_server.log
 ~~~
 
-No client-side stage selected these tools. The model read the shipment and
-options, chose hold_shipment from three disposition actions, waited for its
-result, and then notified dispatch in the next model turn.
+No client-side stage selected these tools. The model read the shipment and options, chose hold_shipment from three disposition actions, waited for its result, and then notified dispatch in the next model turn.
 
 ### Hazardous-material example
 
-The hazardous-material case exercises the other non-scheduling outcome. It uses
-the same user input:
+The hazardous-material case exercises the other non-scheduling outcome. It uses the same user input:
 
 ~~~text
 Choose a safe disposition for the pending shipment and notify dispatch.
 ~~~
 
-The model received a compliant hazmat dock but no carrier capable of handling
-the shipment:
+The model received a compliant hazmat dock but no carrier capable of handling vthe shipment:
 
 ~~~json
 [
@@ -780,14 +701,11 @@ The strict evaluator accepted the exact trajectory:
 }
 ~~~
 
-Unlike the weather case, there is no temporarily blocked compatible carrier to
-wait for. The model therefore escalated instead of placing the shipment on hold.
+Unlike the weather case, there is no temporarily blocked compatible carrier to wait for. The model therefore escalated instead of placing the shipment on hold.
 
 ## The autonomous agent loop
 
-Pydantic AI registers ordinary Python functions as model tools. The model never
-executes Python or shell code directly. All six tools remain available on every
-turn:
+Pydantic AI registers ordinary Python functions as model tools. The model never executes Python or shell code directly. All six tools remain available on every turn:
 
 1. `get_pending_shipment`
 2. `get_shipping_options`
@@ -801,12 +719,7 @@ The complete system instruction is deliberately short:
 ```text
 You are an autonomous shipping coordinator.
 
-Complete the user's task by choosing and calling the available tools. Treat tool
-results as the only source of operational truth. Work one step at a time: in each
-response, call exactly one listed tool, then stop and wait for its result before
-deciding the next action. Never invent tool names, identifiers, or facts, and do
-not repeat successful work. When the shipment has a safe recorded disposition and
-dispatch has been notified, finish with a concise summary of what you completed.
+Complete the user's task by choosing and calling the available tools. Treat tool results as the only source of operational truth. Work one step at a time: in each response, call exactly one listed tool, then stop and wait for its result before deciding the next action. Never invent tool names, identifiers, or facts, and do not repeat successful work. When the shipment has a safe recorded disposition and dispatch has been notified, finish with a concise summary of what you completed.
 ```
 
 A directly registered action looks like ordinary Pydantic AI code:
@@ -824,21 +737,14 @@ def schedule_shipment(ctx, carrier_id: str, dock_id: str):
     )
 ```
 
-`sequential=True` prevents concurrent state-changing calls. It does not hide
-tools or prescribe the next action. The model receives each tool result in the
-conversation and chooses the next step.
+`sequential=True` prevents concurrent state-changing calls. It does not hide tools or prescribe the next action. The model receives each tool result in the conversation and chooses the next step.
 
 ## Return decision-ready observations
 
-The first autonomous version returned one mixed carrier list. Ministral usually
-completed it, but strict repeated runs exposed two attention failures: it tried
-clearly rejected options in the weather case, and once held a routine shipment
-after focusing on an undersized van even though a usable truck was present.
+The first autonomous version returned one mixed carrier list. Ministral usually completed it, but strict repeated runs exposed two attention failures: it tried
+ clearly rejected options in the weather case, and once held a routine shipment after focusing on an undersized van even though a usable truck was present.
 
-Adding more case-specific prompt text would have made the test easier to pass but
-less representative. Instead, the mock options service was improved as a real
-logistics service would be. It performs deterministic compatibility checks and
-groups records into:
+Adding more case-specific prompt text would have made the test easier to pass but less generic. Instead, the mock options service was improved as a real logistics service would be. It performs deterministic compatibility checks and groups records into:
 
 ```json
 {
@@ -854,37 +760,27 @@ groups records into:
 }
 ```
 
-The service does not choose `schedule`, `hold`, or `escalate`. It supplies
-decision-ready facts and leaves coordination policy to the model. This is an
-important edge-agent pattern: deterministic systems should calculate facts they
-can calculate exactly, while the LLM handles changing workflow and intent.
+The service does not choose `schedule`, `hold`, or `escalate`. It supplies decision-ready facts and leaves coordination policy to the model. This is an
+important edge-agent pattern: deterministic systems should calculate facts they can calculate exactly, while the LLM handles changing workflow and intent.
 
-The tools operate on one current shipment, so downstream calls do not ask the
-model to repeat its shipment ID. Removing redundant identifier transcription
+The tools operate on one current shipment, so downstream calls do not ask the model to repeat its shipment ID. Removing redundant identifier transcription
 fixed a real MCP validation failure without reducing decision autonomy.
 
 ## Run the same tools through MCP
 
-The same console client can discover and execute all six tools through the
-[Model Context Protocol](https://modelcontextprotocol.io/):
+The same console client can discover and execute all six tools through the [Model Context Protocol](https://modelcontextprotocol.io/):
 
 ```bash
 python -m shipping_agent.app --scenario routine --transport mcp
 python -m shipping_agent.app --scenario all --transport mcp --repeat 2
 ```
 
-`shipping_agent/mcp_server.py` starts automatically as a separate stdio
-process for each scenario. It owns the mock state and persists every executed
-call for the strict evaluator. There is no MCP tool pruning.
+`shipping_agent/mcp_server.py` starts automatically as a separate stdio process for each scenario. It owns the mock state and persists every executed call for the strict evaluator. There is no MCP tool pruning.
 
-One subtle difference mattered. Pydantic's direct registration emitted concise
-JSON schemas, while raw MCP discovery added schema titles such as
-`get_shipping_optionsArguments` and `Shipment Id`. A preliminary MCP run
-copied `SHP-1001` as `SHP-1000`, recovered, but correctly failed strict
-scoring because of the extra rejected call.
+One subtle difference mattered. Pydantic's direct registration emitted concise JSON schemas, while raw MCP discovery added schema titles such as
+`get_shipping_optionsArguments` and `Shipment Id`. An early MCP run copied `SHP-1001` as `SHP-1000`, recovered, but correctly failed strict scoring because of the extra rejected call.
 
-The client wraps the discovered tools with Pydantic AI's `PreparedToolset` and
-normalizes only their model-facing JSON schemas:
+The client wraps the discovered tools with Pydantic AI's `PreparedToolset` and normalizes only their model-facing JSON schemas:
 
 ```python
 def normalize_mcp_tool_schemas(_ctx, tool_defs):
@@ -910,15 +806,11 @@ def normalize_mcp_tool_schemas(_ctx, tool_defs):
 toolset = PreparedToolset(discovered_toolset, normalize_mcp_tool_schemas)
 ```
 
-Discovery and execution still use real MCP stdio transport. The wrapper merely
-makes the schemas presented to this small model match the proven direct-tool
-shape. The result agrees with the earlier benchmark finding: MCP is not
-inherently too unreliable for a 3B model, but extra schema noise can matter.
+Discovery and execution still use real MCP stdio transport. The wrapper merely makes the schemas presented to this small model match the proven direct-tool shape. The result agrees with the earlier benchmark finding: MCP is not inherently too unreliable for a 3B model, but extra schema noise can throw it off.
 
 ## A safer progressive-disclosure option
 
-Some deployments should expose only actions that are valid in the current
-workflow stage. Pydantic AI can prepare the tool list dynamically:
+Some deployments should expose only actions that are valid in the current workflow stage. Pydantic AI can prepare the tool list dynamically:
 
 ```python
 def available_when(predicate):
@@ -937,20 +829,13 @@ def schedule_shipment(ctx, carrier_id: str, dock_id: str):
     ...
 ```
 
-A stricter version can expose only the initial read tool, then the options tool,
-then the three disposition actions, and finally notification. That design is
-easier for a small model and reduces the chance of invalid ordering. It is a
-reasonable production choice when safety or transaction cost matters more than
-demonstrating model autonomy.
+A stricter version can expose only the initial read tool, then the options tool, then the three disposition actions, and finally notification. That design is easier for a small model and reduces the chance of invalid ordering. It is a reasonable production choice when safety or transaction cost matters more than demonstrating model autonomy.
 
-This tutorial does not use that path. The running application exposes all six
-tools from the first turn so the observed sequence is genuinely selected from
-prompts, tool descriptions, and returned observations.
+This tutorial does *not* use that path. The running application exposes all six tools from the first turn so the observed sequence is genuinely selected from prompts, tool descriptions, and returned observations.
 
 ## Keep hard validation in code
 
-Autonomy does not require operational systems to accept impossible actions.
-The scheduling tool still enforces ordinary software rules:
+Autonomy does not require operational systems to accept impossible actions. The scheduling tool still enforces ordinary software rules:
 
 ```python
 if carrier["capacity_pallets"] < shipment["pallets"]:
@@ -963,33 +848,19 @@ if not carrier["route_open"]:
     return {"ok": False, "error": "route_closed"}
 ```
 
-The distinction is policy versus invariant. Python does not decide whether to
-hold or escalate. Both tools accept a pending shipment and a non-empty reason.
-The post-run evaluator marks a safe but poor disposition as wrong. Python does
-continue to reject unknown resources, incompatible schedules, duplicate state
-changes, and notification before a disposition exists.
+The distinction is policy versus rules and conditions. Python does not decide whether to hold or escalate. Both tools accept a pending shipment and a non-empty reason.
+The post-run evaluator marks a safe but poor disposition as wrong. Python does continue to reject unknown resources, incompatible schedules, duplicate state changes, and notification before a disposition exists.
 
-The dispatch tool takes no model arguments. It reads the current shipment's
-authoritative ID and status and composes the notification. Repeating already
-known state adds transcription failures without adding useful autonomy.
+The dispatch tool takes no model arguments. It reads the current shipment's authoritative ID and status and composes the notification. Repeating already known state adds transcription failures with these small models, without adding useful autonomy.
 
-Every successful disposition result explicitly reports
-`"dispatch_notified": false`; only `notify_dispatch` returns `true`. This
-truthful state prevents the model from treating escalation or scheduling as if
-notification had happened. It is an API design improvement, not a hidden next
+Every successful disposition result explicitly reports `"dispatch_notified": false`; only `notify_dispatch` returns `true`. This truthful state prevents the model from treating escalation or scheduling as if notification had happened. It is an API design improvement, not a hidden next
 step or a scenario-specific hint.
 
-Strict scoring uses the recorded action ledger, not an LLM judge. A run fails
-for a wrong disposition, wrong carrier or dock, rejected action, extra action,
-incorrect order, or missing dispatch notification. Pydantic tool retries are
-disabled, so a malformed call cannot be silently repaired outside that ledger.
+Strict scoring uses the recorded action ledger, not an LLM judge. A run fails for a wrong disposition, wrong carrier or dock, rejected action, extra action, incorrect order, or missing dispatch notification. Pydantic tool retries are disabled, so a malformed call cannot be silently repaired outside that ledger.
 
 ## Validated results
 
-The final application was validated on the physical IQ9075 HTP with temperature
-0, top-k 1, top-p 1, and the same four scenarios for both transports. Every row
-below contains two complete repetitions, exposes all model-emitted calls, uses
-zero automatic tool retries, and requires the exact action ledger.
+The final application was validated on the physical IQ9075 HTP with temperature 0, top-k 1, top-p 1, and the same four scenarios for both transports. Every row below contains two complete repetitions, exposes all model-emitted calls, uses zero automatic tool retries, and requires the exact action ledger.
 
 | Model backend | Tool transport | Strict passes | Executed calls | End-to-end time |
 |---|---|---:|---:|---:|
@@ -998,11 +869,7 @@ zero automatic tool retries, and requires the exact action ledger.
 | `genie-t2t-run` per request | Direct Pydantic registration | 8/8 | 32, all successful | 6m 00.9s |
 | `genie-t2t-run` per request | MCP discovery over stdio | 8/8 | 32, all successful | 6m 09.2s |
 
-The persistent service reduced total wall time by about 23% for direct tools and
-22% for MCP. This is workflow time rather than raw decode throughput: each case
-needs four tool-producing requests plus a fifth request for its final summary.
-The C++ process keeps the model and QNN contexts loaded between those requests;
-the CLI path initializes a new dialog process each time.
+The persistent service reduced total wall time by about 23% for direct tools and 22% for MCP. This is workflow time rather than raw decode throughput: each case needs four tool-producing requests plus a fifth request for its final summary. The C++ process keeps the model and QNN contexts loaded between those requests; the CLI path initializes a new dialog process each time.
 
 Every case followed one of these exact four-call paths:
 
@@ -1013,53 +880,34 @@ Every case followed one of these exact four-call paths:
 | Weather closure | read, options, hold, notify | held for recoverable closure |
 | Hazardous material | read, options, escalate, notify | escalated to a human |
 
-An earlier CLI setting kept only the first parsed call. That looked helpful until
-a raw weather response revealed one valid `hold_shipment` call followed by an
-invented `notify_shipment` call. Silently dropping the second call made the run
-look better than the model's actual behavior. The final `all` policy exposes
-both, and every result above was rerun under that stricter rule.
+An earlier CLI setting kept only the first parsed call. That looked helpful until a raw weather response revealed one valid `hold_shipment` call followed by an invented `notify_shipment` call. Silently dropping the second call made the run look better than the model's actual behavior. The final `all` policy exposes both, and every result above was rerun under that stricter rule.
 
 Four general changes made the fully exposed runs repeatable:
 
-- Model-facing empty assistant content is rendered as an empty string, never the
-  literal word `null`.
+- Model-facing empty assistant content is rendered as an empty string, never the literal word `null`.
 - The prompt asks for exactly one tool call and a pause for its result.
-- Hold and escalation descriptions distinguish temporary recovery from no
-  compatible option.
+- Hold and escalation descriptions distinguish temporary recovery from no compatible option.
 - Disposition results explicitly report that dispatch is not yet notified.
 
-No scenario-specific tool list is used: the same six tools remain visible from
-the first turn in every case. MCP discovery added little time compared with
-model inference.
+No scenario-specific tool list is used: the same six tools remain visible from the first turn in every case. MCP discovery added little time compared with model inference.
 
 ## Experiment with multiple tools in one model turn
 
-The main suite deliberately asks for one tool call per model turn. This is
-reliable, but it leaves a useful question unanswered: can this model identify
-independent work, request several tools at once, and still wait before taking an
-action that depends on their results?
+The main suite deliberately asks for one tool call per model turn. This is reliable, but it leaves a useful question unanswered: can this model identify independent work, request several tools at once, and still wait before taking an action that depends on their results?
 
-[The separate multi-tool case](https://github.com/eivholt/qai-nemotron/blob/main/shipping_agent/multitool_demo.py) replaces the
-combined options tool with three read-only observations:
+[The separate multi-tool case](https://github.com/eivholt/qai-nemotron/blob/main/shipping_agent/multitool_demo.py) replaces the combined options tool with three read-only observations:
 
 1. `get_pending_shipment`
 2. `get_carrier_options`
 3. `get_dock_options`
 
-It also exposes `schedule_shipment`, `hold_shipment`, `escalate_shipment`, and
-`notify_dispatch`. The cold-chain shipment can be scheduled only after the model
-combines the independent shipment, carrier, and dock results. Its extra
-instruction is about dependency handling rather than the answer:
+It also exposes `schedule_shipment`, `hold_shipment`, `escalate_shipment`, and `notify_dispatch`. The cold-chain shipment can be scheduled only after the model combines the independent shipment, carrier, and dock results. Its extra instruction is about dependency handling rather than the answer:
 
 ```text
-Request independent read-only observations together in one response when it is
-safe to do so. Never batch a state-changing call with observations or other work
-whose result it depends on.
+Request independent read-only observations together in one response when it is safe to do so. Never batch a state-changing call with observations or other work whose result it depends on.
 ```
 
-The read tools use normal Pydantic registration, while state-changing tools use
-`sequential=True`. The request also sets `parallel_tool_calls=True`. Run the case
-against the persistent C++ adapter:
+The read tools use normal Pydantic registration, while state-changing tools use `sequential=True`. The request also sets `parallel_tool_calls=True`. Run the case against the persistent C++ adapter:
 
 ```bash
 cd ~/qai-nemotron
@@ -1071,8 +919,7 @@ python -m shipping_agent.multitool_demo \
   --repeat 3
 ```
 
-The first raw response from the C++ service contained three native Mistral tool
-blocks in one assistant message. Line breaks are added here for readability:
+The first raw response from the C++ service contained three native Mistral tool blocks in one assistant message. Line breaks are added here for readability:
 
 ```text
 [TOOL_CALLS]get_pending_shipment[ARGS]{}
@@ -1080,8 +927,7 @@ blocks in one assistant message. Line breaks are added here for readability:
 [TOOL_CALLS]get_dock_options[ARGS]{}
 ```
 
-The adapter preserved all three calls, and Pydantic executed the independent
-Python tools before returning their results to the model. The full sequence was:
+The adapter preserved all three calls, and Pydantic executed the independent Python tools before returning their results to the model. The full sequence was:
 
 ```json
 [
@@ -1099,163 +945,77 @@ Python tools before returning their results to the model. The full sequence was:
 ]
 ```
 
-The outer list represents model turns. The first turn performs three independent
-reads. The model then sees all three results and schedules `REEFER-2` at
-`COLD-1` in the second turn. Only after that action succeeds does it notify
-dispatch in the third turn. A fourth turn returns the final text summary without
-calling a tool.
+The outer list represents model turns. The first turn performs three independent reads. The model then sees all three results and schedules `REEFER-2` at `COLD-1` in the second turn. Only after that action succeeds does it notify dispatch in the third turn. A fourth turn returns the final text summary without calling a tool.
 
-The evaluator reports two separate results. `task_passed` requires the exact five
-tools, correct carrier and dock, successful final state, and dispatch
-notification. `batching_passed` additionally requires at least two independent
-read calls in one assistant response and rejects any response that mixes
-dependent state-changing calls. This means a fully sequential run can complete
-the shipping task but still fail the batching experiment.
+The evaluator reports two separate results. `task_passed` requires the exact five tools, correct carrier and dock, successful final state, and dispatch notification. `batching_passed` additionally requires at least two independent read calls in one assistant response and rejects any response that mixes dependent state-changing calls. This means a fully sequential run can complete the shipping task but still fail the batching experiment.
 
 | Backend | Repetitions | Task result | Multi-tool result | Unsafe write batches | Approximate time |
 |---|---:|---:|---:|---:|---:|
 | Persistent C++ service on IQ9075 HTP | 4 | 4/4 | 4/4 | 0/4 | 36s per case |
 
-All four runs emitted the same model-level tool batches, made exactly five calls,
-and reached the correct state. The execution order printed for the three Python
-read functions can vary because they run concurrently; the model's original call
-order remains available in `TOOL BATCHES` and in the adapter's raw request
-records.
+All four runs emitted the same model-level tool batches, made exactly five calls, and reached the correct state. The execution order printed for the three Python read functions can vary because they run concurrently; the model's original call order remains available in `TOOL BATCHES` and in the adapter's raw request records.
 
-This is a successful bounded demonstration, not proof that every parallel plan is
-safe. The model did not emit the whole workflow up front, and it should not have:
-the schedule choice depends on observation results, while notification depends
-on successful scheduling. Useful multi-tool behavior parallelizes only calls
-that are genuinely independent and keeps dependent actions in later turns.
+This is a successful limited demonstration, not proof that every parallel plan is safe. The model did not emit the whole workflow up front, and it should not have: the schedule choice depends on observation results, while notification depends on successful scheduling. Useful multi-tool behavior parallelizes only calls that are genuinely independent and keeps dependent actions in later turns.
 
 ## Generate and execute coordination code
-Code generation is a different form of autonomy from tool calling. A
-tool-calling agent chooses one or more declared actions, receives their results,
-and decides what to do in later model turns; a code-generating agent writes a
-bounded program that can perform loops, calculations, and several API calls
-inside a sandbox. That program can be tested, approved, cached, and reused
-without another model request, but it also introduces separate concerns around
-malicious code, validation, and cache selection. This approach is covered in **TODO:Update link when published**
+Code generation is a different form of autonomy from tool calling. A tool-calling agent chooses one or more declared actions, receives their results, and decides what to do in later model turns; a code-generating agent writes a limited program that can perform loops, calculations, and several API calls inside a sandbox. That program can be tested, approved, cached, and reused without another model request, but it also introduces separate concerns around malicious code, validation, and cache selection. This approach is covered in **TODO:Update link when published**
 [Build a Code-Generating Manufacturing Agent on Dragonwing IQ9075](https://github.com/eivholt/qai-nemotron/blob/main/tutorial_codegen_manufacturing_iq9075.md).
 
 ## What frontier agent platforms add
 
-The successful multi-tool case does not mean that this small model matches a
-current frontier agent. It shows a useful but limited skill: the model can request
-independent information together, inspect the results, and then choose the next
-actions. Frontier platforms can handle more complex workflows than this
-step-by-step loop.
+The successful multi-tool case does not mean that this small model matches a current frontier agent. It shows a useful but limited skill: the model can request independent information together, inspect the results, and then choose the next actions. Frontier platforms can handle more complex workflows than this step-by-step loop.
 
-As of July 2026, the [GPT-5.6 family](https://openai.com/index/gpt-5-6/)
-combines stronger agent-trained models with orchestration features in the
-Responses API. The distinction matters: some capabilities live in the model,
-some in the hosted runtime, and the most advanced workflows depend on both.
+> In the following sections we outline the state of agentic capabilities in frontier models and APIs. While the gap between these and edge deployable models is huge, the latter seems to converge towards frontier model capabilities. Knowledge of those capabilities helps prepare for what lays ahead for the smaller models, and can give inspiration to clever agentic AI engineering.
+
+As of July 2026, the [GPT-5.6 family](https://openai.com/index/gpt-5-6/) combines stronger agent-trained models with orchestration features in the
+Responses API. The distinction matters: some capabilities live in the model, some in the hosted runtime, and the most advanced workflows depend on both.
 
 ### Deferred tool discovery
 
-A conventional function-calling request places every tool name, description, and
-parameter schema in the prompt. Large MCP deployments can spend tens of thousands
-of tokens describing tools that are never used.
+A conventional function-calling request places every tool name, description, and parameter schema in the prompt. Large MCP deployments can spend tens of thousands of tokens describing tools that are never used.
 
-OpenAI's [tool search](https://developers.openai.com/api/docs/guides/tools-tool-search)
-instead gives the model lightweight namespace or MCP-server descriptions.
-Functions marked `defer_loading: true` are loaded only when the model searches for
-them. The selected definitions are then appended to the conversation. This is
-sometimes called deferred tool discovery. It reduces prompt size, preserves more
-of the prompt cache, and lets one agent navigate a much larger tool catalog.
+OpenAI's [tool search](https://developers.openai.com/api/docs/guides/tools-tool-search) instead gives the model lightweight namespace or MCP-server descriptions. Functions marked `defer_loading: true` are loaded only when the model searches for them. The selected definitions are then appended to the conversation. This is sometimes called deferred tool discovery. It reduces prompt size, preserves more of the prompt cache, and lets one agent navigate a much larger tool catalog.
 
-This is not the same as simply hiding most tools from a small model. The model
-must understand a two-stage protocol: search for an appropriate capability,
-inspect the discovered schema, and then call it correctly. Only GPT-5.4 and later
-OpenAI models currently support that protocol. The IQ9075 demo therefore presents
-a small, stable tool set directly. A custom client could build a tool-search layer,
-but these edge models have not been trained or validated for its protocol.
+This is not the same as simply hiding most tools from a small model. The model must understand a two-stage protocol: search for an appropriate capability, inspect the discovered schema, and then call it correctly. Only GPT-5.4 and later OpenAI models currently support that protocol. The IQ9075 demo therefore presents a small, stable tool set directly. A custom client could build a tool-search layer, but these edge models have not been trained or validated for its protocol.
 
 ### Programmatic tool calling
 
-[Programmatic Tool Calling](https://developers.openai.com/api/docs/guides/tools-programmatic-tool-calling)
-lets GPT-5.6 generate JavaScript that coordinates tools inside an isolated V8
-runtime. The program can run independent calls concurrently, use loops and
-conditions, pass one result into another call, and reduce large intermediate
-outputs before returning them to the model. It has no general filesystem,
-subprocess, package-installation, or direct network access; it can reach the world
-only through tools allowed by the application.
+[Programmatic Tool Calling](https://developers.openai.com/api/docs/guides/tools-programmatic-tool-calling) lets GPT-5.6 generate JavaScript that coordinates tools inside an isolated V8 runtime, Google's high-performance JavaScript engine. The program can run independent calls concurrently, use loops and conditions, pass one result into another call, and reduce large intermediate outputs before returning them to the model. It has no general filesystem, subprocess, package-installation, or direct network access; it can reach the world only through tools allowed by the application.
 
-This can replace many model round trips when the control flow is predictable.
-The shipping experiment still returns every tool result to the model for a fresh
-decision. Reproducing Programmatic Tool Calling locally would require both a
-sandbox runtime and a model that reliably generates orchestration code against
-typed tool inputs and outputs. The earlier edge experiments found direct,
-well-described function calls substantially more dependable than adding another
-generated-code protocol.
+This can replace many model round trips when the control flow is predictable. The shipping experiment still returns every tool result to the model for a fresh decision. Reproducing Programmatic Tool Calling locally would require both a sandbox runtime and a model that reliably generates orchestration code against typed tool inputs and outputs. The earlier edge experiments found direct, well-described function calls substantially more dependable than adding another generated-code protocol.
 
 ### Model-directed multi-agent work
 
-GPT-5.6's `ultra` mode coordinates four agents by default. The Responses API
-also provides a [multi-agent beta](https://developers.openai.com/api/docs/guides/responses-multi-agent)
-in which a root model can create subagents, give them bounded tasks, exchange
-messages, wait for results, and synthesize their findings. Separate contexts let
-several agents investigate independent parts of a codebase, compare hypotheses,
-or conduct research concurrently without crowding one conversation.
+GPT-5.6's `ultra` mode coordinates four agents by default. The Responses API also provides a [multi-agent beta](https://developers.openai.com/api/docs/guides/responses-multi-agent) in which a root model can create subagents, give them bounded tasks, exchange messages, wait for results, and synthesize their findings. Separate contexts let several agents investigate independent parts of a codebase, compare hypotheses, or conduct research concurrently without crowding one conversation.
 
-This is different from the multi-tool case above. That case has one model context
-and three Python functions executing concurrently. True multi-agent execution
-requires several active inference streams and context histories. Keeping multiple
-QNN model contexts resident, or repeatedly swapping them, would put much more
-pressure on EVK memory and HTP scheduling. Serializing the subagents is possible,
-but loses the main latency benefit and still leaves a 3B model responsible for
-delegation and synthesis.
+This is different from the multi-tool case above. That case has one model context and three Python functions executing concurrently. True multi-agent execution requires several active inference streams and context histories. Keeping multiple QNN model contexts resident, or repeatedly swapping them, would put much more pressure on EVK memory and HTP scheduling. Serializing the subagents is possible, but loses the main latency benefit and still leaves a 3B model responsible for delegation and synthesis.
 
 ### Long-horizon state and a broader action surface
 
-The [GPT-5.6 Sol model](https://developers.openai.com/api/docs/models/gpt-5.6-sol)
-has a 1.05-million-token context window, up to 128,000 output tokens, adjustable
-reasoning effort through `max`, structured outputs, and a Responses API tool
-surface that includes web and file search, code interpretation, hosted shell,
-patch application, computer use, skills, MCP, and tool search. Together these
-tools let an agent retrieve public or private information, operate graphical
-interfaces, execute sandboxed code, modify files, and load reusable procedures
-without defining every capability as a custom function. The platform also
-supports [conversation state](https://developers.openai.com/api/docs/guides/conversation-state),
-[background execution](https://developers.openai.com/api/docs/guides/background),
-and [context compaction](https://developers.openai.com/api/docs/guides/compaction)
-for long-running work.
+The [GPT-5.6 Sol model](https://developers.openai.com/api/docs/models/gpt-5.6-sol) has a 1.05-million-token context window, up to 128,000 output tokens, adjustable reasoning effort through `max`, structured outputs, and a Responses API tool surface that includes web and file search, code interpretation, hosted shell, patch application, computer use, skills, MCP, and tool search. Together these tools let an agent retrieve public or private information, operate graphical interfaces, execute sandboxed code, modify files, and load reusable procedures without defining every capability as a custom function. The platform also supports [conversation state](https://developers.openai.com/api/docs/guides/conversation-state),
+[background execution](https://developers.openai.com/api/docs/guides/background), and [context compaction](https://developers.openai.com/api/docs/guides/compaction) for long-running work.
 
-The Ministral bundle in this tutorial is compiled for a 4,096-token context.
-Increasing that compiled limit consumes more memory and makes export and runtime
-resource pressure worse. More importantly, a larger token limit alone would not
-teach the model to stay coherent across a long workflow, recover from partial
-failure, manage approvals, or use the additional hosted protocols.
+The Ministral bundle in this tutorial is compiled for a 4,096-token context. Increasing that compiled limit consumes more memory and makes export and runtime resource pressure worse. More importantly, a larger token limit alone would not teach the model to stay coherent across a long workflow, recover from partial failure, manage approvals, or use the additional hosted protocols.
 
 ### Why the gap remains
 
 The missing capabilities are not one single model-size limitation:
 
-- **Training:** frontier models are trained and evaluated on long tool workflows,
-  deferred schemas, code orchestration, computer use, and recovery from failures.
-- **Model capacity:** delegation, protocol selection, intermediate-state tracking,
-  and final synthesis compete for limited attention in a 3B or 8B model.
-- **Runtime support:** Genie and the tutorial's adapter expose chat completions
-  and function calls, not the Responses API's tool-search, program, subagent,
-  compaction, and hosted-tool item types.
-- **Memory and compute:** million-token contexts and concurrent model agents are
-  far beyond the practical memory and latency budget of this exported EVK setup.
-- **Quantization:** Q4 or W4A16 deployment makes these models practical on-device,
-  but can further reduce reliability on exact, low-frequency protocol tokens and
-  complex structured output.
+- **Training:** frontier models are trained and evaluated on long tool workflows, deferred schemas, code orchestration, computer use, and recovery from failures.
+- **Model capacity:** delegation, protocol selection, intermediate-state tracking, and final synthesis compete for limited attention in a 3B or 8B model.
+- **Runtime support:** Genie and the tutorial's adapter expose chat completions and function calls, not the Responses API's tool-search, program, subagent, compaction, and hosted-tool item types.
+- **Memory and compute:** million-token contexts and concurrent model agents are far beyond the practical memory and latency budget of this exported EVK setup.
+- **Quantization:** Q4 or W4A16 deployment makes these models practical on-device, but can further reduce reliability on exact, low-frequency protocol tokens and complex structured output.
 
-Some of this gap can be narrowed in application code. A local registry can filter
-tools, Python can run calls concurrently, and a state machine can compact history
-or delegate bounded subtasks. Those are useful engineering techniques, but they
-should not be presented as native model capabilities until they pass realistic
-repeated tests.
+Some of this gap can be narrowed in application code. A local registry can filter tools, Python can run calls concurrently, and a state machine can compact history or delegate bounded subtasks. Those are useful engineering techniques, but they should not be presented as native model capabilities until they pass realistic repeated tests.
 
-For now, the practical edge design is the one demonstrated here: a concise direct
-tool set, decision-ready observations, strict execution records, parallel calls
-only when they are independent, and dependent actions taken after their results
-arrive. Frontier features provide a roadmap for future edge runtimes and models,
-while the smaller local agent provides privacy, offline operation, predictable
-cost, and useful autonomy today.
+For now, the practical edge design is the one demonstrated here: a concise direct tool set, decision-ready observations, strict execution records, parallel calls only when they are independent, and dependent actions taken after their results arrive. Frontier features provide a roadmap for future edge runtimes and models, while the smaller local agent provides privacy, offline operation, predictable cost, and useful autonomy today.
+
+## Conclusion
+
+A practical edge agent can be meaningfully autonomous without receiving arbitrary code or hardware access. This example gives a 3B NPU-hosted model all six workflow tools, lets it independently choose and sequence actions, and keeps hard operational rules and conditions in deterministic services.
+
+The final direct and MCP runs show that this level of local autonomy is already practical on IQ9075 when the model receives its native prompt format, concise tool schemas, and decision-ready observations. Progressive disclosure remains available when a deployment needs a narrower safety envelope.
 
 ## Troubleshooting
 
@@ -1339,15 +1099,3 @@ the correctly wrapped smoke request completed in seconds.
 
 Use `Ctrl+C` in the server shell. The mock state exists only for one console
 run, so each scenario starts cleanly on the next invocation.
-
-## Conclusion
-
-A practical edge agent can be meaningfully autonomous without receiving
-arbitrary code or hardware access. This example gives a 3B NPU-hosted model all
-six workflow tools, lets it independently choose and sequence actions, and keeps
-hard operational invariants in deterministic services.
-
-The final direct and MCP runs show that this level of local autonomy is already
-practical on IQ9075 when the model receives its native prompt format, concise
-tool schemas, and decision-ready observations. Progressive disclosure remains
-available when a deployment needs a narrower safety envelope.
