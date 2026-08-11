@@ -14,6 +14,8 @@ sampling, energy scheduling, and spare-parts replenishment. Python executes each
 program in a restricted child process, while deterministic mock runtimes record
 and validate every API call.
 
+![Qualcomm Dragonwing IQ-9075 EVK](resources/code_gen_banner.png)
+
 While this demonstrates that edge-fit models are capable for code generation and execution, they are far from being as capable as large frontier LLMs. For now, task complexity has to be reduced to an appropriate level. What's more interesting is the threshold this has crossed; as models get better and hardware more capable - imagine how future self-evolving systems like this can be created. 
 
 > Desired behavior and requirements can be provided as natural language prompts, capabilities and service descriptions can be plugged in, and the system will generate itself ad-hoc! Whether this is an utopian scenario for automation, or the beginning of Skynet is up to us as responsible developers to decide.
@@ -847,6 +849,8 @@ The IQ9075 can keep model inference, production observations, generated source,
 and validation evidence local. A small model can produce useful coordination
 programs when the API contract is narrow, the policy is explicit, and acceptance
 is strict.
+
+This is the very beginning of edge models capable of ad-hoc coding and likely a front that will evolve rapidly!
 
 Autonomy and control are not opposites here. The model writes the decision
 logic; the host supplies isolation, auditable APIs, tests, and the authority to
